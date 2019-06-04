@@ -6,6 +6,7 @@
       <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items>
+        <v-btn flat @click="backToDashboard">Back</v-btn>
         <v-btn flat router to="/">Sign out</v-btn>
       </v-toolbar-items>
     </v-toolbar>
@@ -64,8 +65,6 @@ export default {
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
       this.user = userData.data.user;
-      this.image = this.user.image;
-      //   this.image = "../" + this.image;
 
       // Get all personal chapters and courses
       var personalChaptersData = await Service.getPersonalChapters();
@@ -74,7 +73,8 @@ export default {
       //Get all questions/Answers user has submitted for this course
       var answers = await Service.getAnswers(this.$route.params);
       this.answerSummary = answers.data.answers
-
+      
+      console.log(this.$route.params);
     } catch (err) {
       console.log(err);
     }
@@ -82,6 +82,9 @@ export default {
   methods: {
     goToCourse(courseId) {
       this.$router.push(`/dashboard/${this.$route.params.id}/${courseId}`);
+    },
+    backToDashboard() {
+        this.$router.push(`/dashboard/${this.$route.params.id}`)
     }
   }
 };

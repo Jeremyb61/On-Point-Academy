@@ -6,10 +6,15 @@ import GroupCourse from './components/GroupCourse'
 import PersonalCourse from './components/PersonalCourse'
 import UploadImage from './components/UploadImage'
 import AnswerSummary from './components/AnswerSummary'
+import LandingPage from './components/LandingPage'
 
 export default [
     { 
         path: '/', 
+        component: LandingPage 
+    },
+    { 
+        path: '/login', 
         component: Login 
     },
     { 

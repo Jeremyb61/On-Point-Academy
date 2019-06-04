@@ -9,6 +9,7 @@ const Sequelize = require('sequelize');
 var session = require('express-session');
 const path = require('path');
 const multer = require('multer')
+const cloudinary = require('cloudinary');
 
 // Vimeo Middleware
 const Vimeo = require('vimeo').Vimeo;
@@ -42,7 +43,6 @@ app.use(session({
 
 // Set Storage Engine
 const storage = multer.diskStorage({
-    destination: '../assets/uploads',
     filename: function (req, file, cb) {
         cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
     }
@@ -67,8 +67,13 @@ function checkFileType(file, cb) {
     } else {
         cb(new Error("Images only!"));
     }
-
 }
+
+cloudinary.config({
+    cloud_name: 'ducvha2fk',
+    api_key: '581228639846129',
+    api_secret: '9hGgdjABHxUUAgPnZm7PkFMTbFw'
+});
 //Image upload end
 
 // const errArray = [];
@@ -190,11 +195,6 @@ User.init({
             }
         }
     },
-    image: {
-        type: Sequelize.STRING,
-        defaultValue: "../assets/large-profile-icon.jpg"
-    }
-    ,
     password: {
         type: Sequelize.STRING,
         validate: {
@@ -207,12 +207,22 @@ User.init({
                 msg: 'Password must be 8 or more characters'
             }
         }
+    },
+    image: {
+        type: Sequelize.STRING,
+        defaultValue: 'https://res.cloudinary.com/ducvha2fk/image/upload/v1558638230/default_pub_id.png'
+    },
+    image_id: {
+        type: Sequelize.STRING,
+        defaultValue: 'default_pub_id'
+
     }
 }, { sequelize, modelName: 'users' });
 
 User.addHook('afterValidate', (user, options) => {
     user.password = bcrypt.hashSync(user.password, 12);
 });
+
 
 class PersonalChapter extends Model { }
 PersonalChapter.init({
@@ -251,6 +261,12 @@ PersonalCourse.init({
 class Group extends Model { }
 Group.init({
     title: {
+        type: Sequelize.STRING
+    },
+    icon: {
+        type: Sequelize.STRING
+    },
+    icon_id: {
         type: Sequelize.STRING
     }
 },
@@ -309,11 +325,23 @@ class GroupCourseAnswer extends Model { }
 GroupCourseAnswer.init({
     answer_content: {
         type: Sequelize.TEXT
-    }
+    },
+    userId: {
+        type: Sequelize.INTEGER
+    },
 },
     { sequelize, modelName: 'group_course_answers' })
 
-//////////////////////// -- One - to - Many --///////////////////////////////////////////////
+class GroupCourseComplete extends Model { }
+GroupCourseComplete.init({
+    userId: {
+        type: Sequelize.INTEGER
+    },
+},
+    { sequelize, modelName: 'group_course_completes' })
+
+
+//////////////////////// -- One - to - Many -- ///////////////////////////////////////////////
 
 PersonalChapter.hasMany(PersonalCourse, { foreignKey: 'personal_chaptersId' });
 
@@ -337,8 +365,8 @@ User.belongsToMany(Group, { through: 'users_in_groups' })
 Group.belongsToMany(User, { through: 'users_in_groups' })
 
 // Tracks the GROUP COURSES that a USER completes
-User.belongsToMany(GroupCourse, { through: 'group_course_completes' })
-GroupCourse.belongsToMany(User, { through: 'group_course_completes' })
+Group.belongsToMany(GroupCourse, { through: 'group_course_completes' })
+GroupCourse.belongsToMany(Group, { through: 'group_course_completes' })
 
 // Tracks the group CHAPTERS that a GROUP completes
 Group.belongsToMany(GroupChapter, { through: 'group_chapter_completes' })
@@ -349,8 +377,8 @@ User.belongsToMany(PersonalCourseQuestion, { through: 'personal_course_answers' 
 PersonalCourseQuestion.belongsToMany(User, { through: 'personal_course_answers' })
 
 // Tracks which answer belongs to which user/group course question
-User.belongsToMany(GroupCourseQuestion, { through: 'group_course_answers' })
-GroupCourseQuestion.belongsToMany(User, { through: 'group_course_answers' })
+Group.belongsToMany(GroupCourseQuestion, { through: 'group_course_answers' })
+GroupCourseQuestion.belongsToMany(Group, { through: 'group_course_answers' })
 
 
 sequelize.sync({
@@ -456,12 +484,15 @@ app.get('/api/chapters', (req, res) => {
         if (!data[0]) {
             console.log("NO DATA/api/groups/chapters")
         } else {
+            console.log(data[0].dataValues);
             res.json({
                 data
             })
         }
     })
 })
+
+//app.use('/api', require('/api/routes.js'));
 
 // Get Users Groups
 app.get('/api/groups/:id', (req, res) => {
@@ -542,41 +573,25 @@ app.get('/api/othergroups/:id/:group', (req, res) => {
 })
 
 // Get Course Content
-app.get('/api/course/:id', (req, res) => {
+app.get('/api/course/:courseId', (req, res) => {
+    console.log(req.params);
     PersonalCourse.findOne({
-        include: [{
-            model: PersonalCourseQuestion,
-        }],
         where: {
-            id: req.params.id
-        }
+            id: req.params.courseId
+        },
+        include: [{
+            model: PersonalCourseQuestion
+        }]
     }).then((course) => {
-        client.request({
-            method: 'GET',
-            path: '/videos/335717725'
-        }, function (error, body, status_code, headers) {
-            if (error) {
-                console.log("dFSDFSDFSDFSDF", error);
-            }
-            // console.log("BODY!!!!!!!", body);
-            res.json({
-                course,
-            })
+        res.json({
+            course,
         })
+
     })
 })
 
 //Submit Course answers
 app.post('/api/answers/:userId', (req, res) => {
-    // const errArray = [];
-    // const dataArray = [];
-    // const getResponseData = (req, res, next) => {
-    //     res.json({
-    //         dataArray
-    //     })
-    // }
-    console.log(req.params)
-    console.log(req.body)
     PersonalAnswer.findOne({
         where: {
             [Op.and]: [
@@ -665,12 +680,22 @@ app.put('/api/image/:id', upload.single('image'), (req, res) => {
             id: req.params.id
         }
     }).then((user) => {
-        let file = req.file.path.replace("..","@");
-        console.log(file)
-        user.update({
-            image: file
-        }).then((user) => {
-            console.log(user);
+        cloudinary.v2.uploader.destroy(user.image_id, (err, res) => {
+            if (err) {
+                console.log("ERRRRRORRRRRR", err);
+            } else {
+                cloudinary.v2.uploader.upload(req.file.path, (err, result) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    user.update({
+                        image: result.secure_url,
+                        image_id: result.public_id,
+                    }).then((updatedUser) => {
+                        console.log(updatedUser);
+                    })
+                })
+            }
         })
     })
 })
@@ -712,13 +737,194 @@ app.get('/api/get-answers/:id/:courseId', (req, res) => {
             replacements: [req.params.courseId, req.params.id],
             type: sequelize.QueryTypes.SELECT
         }).then((answers) => {
-            // console.log("efewfewrfefwfewfwf", answers[i].dataValues)
-
+            console.log("efewfewrfefwfewfwf", answers);
             res.json({
                 answers
             })
         })
 })
+
+app.get('/api/answers-submitted/:id/:courseId', (req, res) => {
+    PersonalCourse.findOne({
+        where: {
+            id: req.params.courseId
+        },
+        include: [{
+            model: PersonalCourseQuestion,
+            include: [{
+                model: User,
+                where: {
+                    id: req.params.id
+                }
+            }]
+        }]
+    }).then((answers) => {
+        res.json({
+            answers
+        })
+    }).catch((err) => {
+        res.json({
+            err
+        })
+    })
+})
+
+app.get('/api/group-course/:courseId', (req, res) => {
+    GroupCourse.findOne({
+        where: {
+            id: req.params.courseId
+        },
+        include: [{
+            model: GroupCourseQuestion
+        }]
+    }).then((course) => {
+        if (!course) {
+            console.log("No Course Found")
+        } else {
+            res.json({
+                course
+            })
+        }
+    })
+})
+
+app.post('/api/group-answers/:id/:group/:courseId', (req, res) => {
+    Group.findOne({
+        where: {
+            title: req.params.group
+        }
+    }).then((group) => {
+        GroupCourseAnswer.findOne({
+            where: {
+                [Op.and]: [
+                    { groupCourseQuestionId: req.body.questionId },
+                    { userId: req.params.id },
+                    { groupId: group.id }
+                ]
+            }
+        }).then((answer) => {
+            if (!answer) {
+                GroupCourseAnswer.create({
+                    answer_content: req.body.answer,
+                    groupId: group.id,
+                    groupCourseQuestionId: req.body.questionId,
+                    userId: req.params.id,
+                }).then((newAnswerSub) => {
+                    GroupCourseComplete.findOne({
+                        where: {
+                            [Op.and]: [
+                                { groupCourseId: req.params.courseId },
+                                { userId: req.params.id },
+                                { groupId: group.id }
+                            ]
+                        }
+                    })
+                        .then((courseCompletes) => {
+                            if (!courseCompletes) {
+                                console.log("HERERERERERER!!!!!")
+                                GroupCourseComplete.create({
+                                    groupId: group.id,
+                                    userId: req.params.id,
+                                    groupCourseId: req.params.courseId
+                                }).then((completion) => {
+                                    console.log("COMPLETION --- ", completion)
+                                    res.json({
+                                        newAnswerSub,
+                                        courseCompletes,
+                                        completion
+                                    })
+                                }).catch((err) => {
+                                    console.log(err);
+                                    res.json({
+                                        err
+                                    })
+                                })
+                            } else {
+                                res.json({
+                                    newAnswerSub,
+                                    courseCompletes
+                                })
+                            }
+                        })
+                }).catch((err) => {
+                    res.json({
+                        err
+                    })
+                })
+            } else {
+                answer.update({
+                    answer_content: req.body.answer
+                }).then((newAnswer) => {
+                    res.json({
+                        newAnswer
+                    })
+                }).catch((err) => {
+                    res.json({
+                        err
+                    })
+                })
+            }
+        }).catch((err) => {
+            res.json({
+                err
+            })
+        })
+    })
+})
+
+app.get('/api/get-group-answers/:group', (req, res) => {
+    console.log(req.params);
+    GroupChapter.findAll({
+        include: [{
+            model: GroupCourse,
+            include: [{
+                model: GroupCourseQuestion,
+                include: [{
+                    model: Group,
+                    where: {
+                        title: req.params.group
+                    }
+                }]
+            }]
+        }]
+    })
+        .then((answers) => {
+            res.json({
+                answers
+            })
+        })
+        .catch((err) => {
+            res.json({
+                err
+            })
+        })
+})
+
+app.get('/api/group-answers-submitted/:id/:courseId/:group', (req, res) => {
+    console.log("FDGDFGFDGD", req.params);
+    Group.findOne({
+        where: {
+            title: req.params.group
+        }
+    })
+        .then((group) => {
+            sequelize.query('SELECT * FROM group_courses LEFT JOIN group_course_questions ON group_courses.id = group_course_questions.group_courseId LEFT JOIN group_course_answers ON group_course_questions.id = group_course_answers.groupCourseQuestionId WHERE group_courses.id = ?  AND group_course_answers.userId = ? AND group_course_answers.groupId = ?',
+                {
+                    replacements: [req.params.courseId, req.params.id, group.id],
+                    type: sequelize.QueryTypes.SELECT
+                })
+                .then((answers) => {
+                    res.json({
+                        answers
+                    })
+                })
+                .catch((err) => {
+                    console.log(err);
+                    res.json(err)
+                })
+        })
+})
+
 // Port 
 const port = process.env.PORT || 8000;
 

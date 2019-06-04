@@ -19,7 +19,7 @@
           </v-list>
         </v-menu>
         <v-btn flat @click="backToDashboard">Dashboard</v-btn>
-        <v-btn flat>Sign out</v-btn>
+        <v-btn flat router to="/">Sign out</v-btn>
       </v-toolbar-items>
     </v-toolbar>
     <!-- End Header -->
@@ -39,9 +39,28 @@
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-navigation-drawer>
-
     <!-- End Side Nav Bar -->
-    <h1>{{ groupTitle }}</h1>
+    <div class="container">
+      <img :src="currentGroup.icon" width="200px;">
+
+      <div class="answers-div" v-for="chap in groupAnswers" :key="chap.id">
+        <h2>{{ chap.title }}</h2>
+        <hr>
+        <div v-for="course in chap.group_courses" :key="course.id">
+          <div v-for="(question,index) in course.group_course_questions" :key="question.id">
+            <div v-if="question.question_content[index]">
+              <div class="answer grey lighten-3">
+                <p>{{ question.question_content }}</p>
+                <p
+                  v-for="answer in question.groups"
+                  :key="answer.id"
+                >{{ answer.group_course_answers.answer_content }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -54,16 +73,40 @@ export default {
       sideNavBar: false,
       panel: [false],
       groups: [],
+      groupAnswers: [],
       groupChapters: [],
       usersFirstname: "",
-      groupTitle: this.$route.params.group
+      currentGroup: {}
     };
+  },
+  watch: {
+    async $route(to, from) {
+      var myGroup = await Service.getCurrentGroup(to.params.group);
+      console.log(myGroup);
+      this.currentGroup = myGroup.data.group;
+
+      var groupData = await Service.getOtherGroups(
+        this.$route.params.id,
+        to.params.group
+      );
+      this.groups = groupData.data.usersGroups.groups;
+
+      var answerData = await Service.getGroupQuestionsAnswers(to.params.group);
+      this.groupAnswers = answerData.data.answers;
+      console.log(this.groupAnswers);
+    }
   },
   async created() {
     try {
+      console.log(this.$route.params);
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
       this.usersFirstname = userData.data.user.first_name;
+
+      // Get Current Group title
+      var myGroup = await Service.getCurrentGroup(this.$route.params.group);
+      this.currentGroup = myGroup.data.group;
+      console.log(this.currentGroup);
 
       // Get all others groups that user belongs to
       var groupData = await Service.getOtherGroups(
@@ -72,30 +115,22 @@ export default {
       );
       this.groups = groupData.data.usersGroups.groups;
 
-      // Get Current Group title
-      var myGroup = await Service.getCurrentGroup(this.$route.params.group);
-      console.log(myGroup);
-      this.groupTitle = myGroup.data.group.title;
-
       // Get all Group chapters
       var groupChaptersData = await Service.getGroupChapters();
       this.groupChapters = groupChaptersData.data.data;
+
+      var answerData = await Service.getGroupQuestionsAnswers(
+        this.$route.params.group
+      );
+      this.groupAnswers = answerData.data.answers;
+      console.log(this.groupAnswers);
     } catch (err) {
       console.log("ERROR", err);
     }
   },
   methods: {
-    async switchGroup(group) {
+    switchGroup(group) {
       this.$router.push(`/${this.$route.params.id}/${group}`);
-
-      var myGroup = await Service.getCurrentGroup(this.$route.params.group);
-      this.groupTitle = myGroup.data.group.title;
-
-      var groupData = await Service.getOtherGroups(
-        this.$route.params.id,
-        this.$route.params.group
-      );
-      this.groups = groupData.data.usersGroups.groups;
     },
     goToGroupCourse(courseId) {
       this.$router.push(
@@ -105,12 +140,19 @@ export default {
       );
     },
     backToDashboard() {
-        this.$router.push(`/dashboard/${this.$route.params.id}`);
+      this.$router.push(`/dashboard/${this.$route.params.id}`);
     }
-  } 
+  }
 };
 </script>
 <style scoped>
+.answers-div {
+  min-height: 100px;
+}
+.answer {
+  margin-top: 15px;
+  min-height: 57px;
+}
 </style>
 
 

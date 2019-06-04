@@ -51,19 +51,18 @@ export default {
       console.log(this.file);
       this.imageName = this.file.name;
     },
-    async onUpload() {
+    onUpload() {
       const formData = new FormData();
-      formData.append("image", this.file);
       formData.append("image", this.file);
       
       try {
        
 
-        // var uploadData = await Service.uploadNewImage(
-        //   this.$route.params.id,
-        //   fd
-        // );
-        // this.$route.push(`/dashboard/${this.$route.params.id}`);
+        var uploadData = Service.uploadNewImage(
+          this.$route.params.id,
+          formData
+        );
+        this.$router.push(`/dashboard/${this.$route.params.id}`);
       } catch (err) {
         console.log(err);
       }

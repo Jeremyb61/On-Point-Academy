@@ -6,14 +6,26 @@
       <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items>
-        <v-btn flat>Dashboard</v-btn>
-        <v-btn flat>Sign out</v-btn>
+        <v-btn flat @click="backToDashboard">Dashboard</v-btn>
+        <v-menu>
+          <template #activator="{ on: menu }">
+            <v-btn flat v-on="{ ...menu }" class="hidden-xs-only">Your Groups</v-btn>
+          </template>
+          <v-list>
+            <div v-for="(group, index) in groups" :key="index">
+              <v-list-tile @click="goToGroup(group.title)">
+                <v-list-tile-title>{{ group.title }}</v-list-tile-title>
+              </v-list-tile>
+            </div>
+          </v-list>
+        </v-menu>
+        <v-btn flat @click="signOut">Sign out</v-btn>
       </v-toolbar-items>
     </v-toolbar>
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
-    <v-navigation-drawer width="220" v-model="sideNavBar" app class="accent">
+    <v-navigation-drawer width="230" v-model="sideNavBar" app class="accent">
       <v-expansion-panel v-model="panel" expand>
         <v-expansion-panel-content v-for="item in personalChapters" :key="item.id">
           <template v-slot:header>
@@ -22,9 +34,9 @@
           <div v-for="course in item.personal_courses" :key="course.id">
             <v-card @click="goToCourse(course.id)">
               <v-card-text class="grey lighten-3">
-                  {{ course.title }}
-                  <v-icon v-if="course.users[0]" color="success" right>done</v-icon>
-                  </v-card-text>
+                {{ course.title }}
+                <v-icon v-if="course.users[0]" color="success" right>done</v-icon>
+              </v-card-text>
             </v-card>
           </div>
         </v-expansion-panel-content>
@@ -34,47 +46,36 @@
 
     <!-- Course Content -->
     <div class="container">
-      <h1>{{ usersFirstname }}'s Personal Course Dashboard</h1>
-      {{ courseData }}
-      <iframe
-        v-if="videoId !== ''"
-        :src="`https://player.vimeo.com/video/${videoId}`"
-        width="1000"
-        height="400"
-        frameborder="0"
-        webkitallowfullscreen
-        mozallowfullscreen
-        allowfullscreen
-      ></iframe>
+      <h1 class="courseTitle">{{ courseData.title }}</h1>
+      <div class="videoWrapper">
+        <iframe
+          v-if="videoId !== ''"
+          :src="`https://player.vimeo.com/video/${videoId}`"
+          width="1000"
+          height="400"
+          frameborder="0"
+          webkitallowfullscreen
+          mozallowfullscreen
+          allowfullscreen
+        ></iframe>
+      </div>
+      <div class="contentWrapper">
+        <p>{{ courseData.content }}</p>
 
-      <form>
-        <div v-for="(question,index) in questions" :key="index">
-          <v-textarea
-            v-model="answers[index]"
-            name="input-7-1"
-            :label="question.question_content"
-            height="150"
-          ></v-textarea>
-        </div>
-        <v-btn @click="submitAnswers">Submit</v-btn>
-      </form>
-
+        <form>
+          <div v-for="(question,index) in questions" :key="question.id">
+            <v-textarea
+              v-model="answer[index]"
+              name="input-7-1"
+              :label="question.question_content"
+              height="150"
+            ></v-textarea>
+          </div>
+          <v-alert v-model="submitVal" type="success" dismissible>Answers submitted successfully</v-alert>
+          <v-btn @click="submitAnswers">Submit</v-btn>
+        </form>
+      </div>
       <!-- End Course Content -->
-
-
-
-      1. Loop through data that i get back from "get personal chapters"
-        <br>
-        <br>
-      2. Count how many courses exist.
-      <br>
-      <br>
-      3. For each course, check if that course has an array of users, 
-      <br>
-      if so, check if one of those users is the user in params. if so
-      <br>
-      count 1
-
     </div>
   </div>
 </template>
@@ -88,72 +89,148 @@ export default {
       sideNavBar: false,
       panel: [false],
       personalChapters: [],
+      groups: [],
+      submitVal: false,
       usersFirstname: "",
       courseData: {},
       questions: [],
-      answers: [],
-      videoId: ''
+      answer: [],
+      videoId: ""
     };
+  },
+  watch: {
+    async $route(to, from) {
+      try {
+        // Get course content
+        var courseContentData = await Service.getPersonalCourseContent(
+          to.params
+        );
+        this.courseData = courseContentData.data.course;
+        this.questions = this.courseData.personal_course_questions;
+        this.videoId = courseContentData.data.course.video_url;
+
+        var answerData = await Service.getSubmittedAnswers(to.params);
+        this.answer = [];
+        for (var i in answerData.data.answers.personal_course_questions) {
+          this.answer.push(
+            answerData.data.answers.personal_course_questions[i].users[0]
+              .personal_course_answers.answer_content
+          );
+        }
+      } catch (err) {
+        console.log("ERROR ", err);
+      }
+    }
   },
   async created() {
     try {
       // Get course content
       var courseContentData = await Service.getPersonalCourseContent(
-        this.$route.params.courseId
+        this.$route.params
       );
       this.courseData = courseContentData.data.course;
-      this.questions = this.courseData.personal_course_questions;
       this.videoId = courseContentData.data.course.video_url;
+      this.questions = this.courseData.personal_course_questions;
 
-    // Get User Data
+      // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
       this.usersFirstname = userData.data.user.first_name;
 
       // Get all personal chapters and courses
       var personalChaptersData = await Service.getPersonalChapters();
       this.personalChapters = personalChaptersData.data.data;
-    //   console.log(this.personalChapters[0].personal_courses);
 
+      var answerData = await Service.getSubmittedAnswers(this.$route.params);
+      if (answerData.data.answers.personal_course_questions[0]) {
+        for (var i in answerData.data.answers.personal_course_questions) {
+          this.answer.push(
+            answerData.data.answers.personal_course_questions[i].users[0]
+              .personal_course_answers.answer_content
+          );
+        }
+      }
 
-    //   var iframe = document.querySelector("iframe");
-    //   var player = new Vimeo.Player(iframe);
-
-    //   player.on("play", function() {
-    //     // console.log("Played the video");
-    //   });
-
-    //   player.getVideoTitle().then(function(title) {
-    //     // console.log("title:", title);
-    //   });
+      // Get all groups that this user belongs to
+      var groupData = await Service.getGroups(this.$route.params.id);
+      this.groups = groupData.data.usersGroups.groups;
     } catch (err) {
-    //   console.log("ERROR ", err);
+      console.log("ERROR ", err);
     }
   },
   methods: {
     goToCourse(courseId) {
       this.$router.push(`/dashboard/${this.$route.params.id}/${courseId}`);
     },
+    backToDashboard() {
+      this.$router.push(`/dashboard/${this.$route.params.id}`);
+    },
+    signOut() {
+      this.$router.push(`/`);
+    },
+    goToGroup(groupTitle) {
+      this.$router.push(`/${this.$route.params.id}/${groupTitle}`);
+    },
     async submitAnswers() {
       var answerObj = {};
       for (var i in this.questions) {
         answerObj = {
           questionId: this.questions[i].id,
-          answer: this.answers[i]
+          answer: this.answer[i]
         };
-      var submitResponse = await Service.submitPersonalAnswers(
+        var submitResponse = await Service.submitPersonalAnswers(
           answerObj,
           this.$route.params.id
         );
       }
-        console.log("submit response", submitResponse);
+      if (submitResponse.data.newAnswer) {
+        this.submitVal = true;
+      }
       var courseCompleteData = await Service.submitCourseCompletion(
-          this.$route.params.id,
-          this.$route.params.courseId
-      )
+        this.$route.params.id,
+        this.$route.params.courseId
+      );
     }
   }
 };
 </script>
 
 <style scoped>
+.courseTitle {
+  margin-left: 60px;
+}
+iframe {
+  position: relative;
+  width: 100%;
+  margin: auto;
+  min-height: 400px;
+}
+.videoWrapper {
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+.contentWrapper {
+  padding: 60px;
+}
+@media only screen and (max-width: 700px) {
+  .videoWrapper {
+    width: 100%;
+    margin: auto;
+  }
+  .iframe {
+    position: absolute;
+    top: 0px;
+    height: 100%;
+    width: 100%;
+    left: 0px;
+  }
+  .contentWrapper {
+    margin-left: 0px;
+    padding: 0px;
+  }
+}
+@media only screen and (max-width: 900px) {
+  .courseTitle {
+    margin: 0px;
+  }
+}
 </style>

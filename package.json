@@ -11,6 +11,7 @@
     "axios": "^0.18.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "cloudinary": "^1.14.0",
     "core-js": "^2.6.5",
     "cors": "^2.8.5",
     "express": "^4.17.0",
@@ -20,7 +21,9 @@
     "sequelize": "^5.8.6",
     "vimeo": "^2.1.1",
     "vue": "^2.6.10",
+    "vue-radial-progress": "^0.2.10",
     "vue-router": "^3.0.6",
+    "vuejs-progress-bar": "^1.0.9",
     "vuetify": "^1.5.5"
   },
   "devDependencies": {

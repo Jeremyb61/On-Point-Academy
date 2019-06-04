@@ -23,11 +23,6 @@ class Service {
     static getGroupChapters() {
         return axios.get(`${url}/api/chapters/groups`);
     }
-    //Get Perosnal Courses
-    // static getPersonalCourses (id) {
-    //     return axios.get(`${url}/api/courses/${id}`);
-    // }
-
     // Get groups that user belongs
     static getGroups (id) {
         return axios.get(`${url}/api/groups/${id}`);
@@ -38,8 +33,8 @@ class Service {
     static getCurrentGroup(group) {
         return axios.get(`${url}/api/group/${group}`);
     }
-    static getPersonalCourseContent(courseId) {
-        return axios.get(`${url}/api/course/${courseId}`);
+    static getPersonalCourseContent(params) {
+        return axios.get(`${url}/api/course/${params.courseId}`);
     }
     static submitPersonalAnswers(answers,userId) {
         return axios.post(`${url}/api/answers/${userId}`,answers);
@@ -56,6 +51,22 @@ class Service {
     static getAnswers(params) {
         return axios.get(`${url}/api/get-answers/${params.id}/${params.courseId}`);
     }
+    static getSubmittedAnswers(params) {
+        return axios.get(`${url}/api/answers-submitted/${params.id}/${params.courseId}`);
+    }
+    static getSubmittedGroupAnswers(params) {
+        return axios.get(`${url}/api/group-answers-submitted/${params.id}/${params.courseId}/${params.group}`);
+    }
+    static getGroupCourseContent(params) {
+        return axios.get(`${url}/api/group-course/${params.courseId}`);
+    }
+    static submitGroupAnswers(body,params) {
+        return axios.post(`${url}/api/group-answers/${params.id}/${params.group}/${params.courseId}`, body);
+    }
+    static getGroupQuestionsAnswers(group) {
+        return axios.get(`${url}/api/get-group-answers/${group}`);
+    }
+ 
 }
 
 
