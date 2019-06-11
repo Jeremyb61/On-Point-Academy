@@ -2,10 +2,10 @@
   <div class="home">
     <div class="login">
       <header class="header">
-        <h1>On Point Academy</h1>
+        <span class="display-1 font-weight-thin black--text"><b>OnPoint</b> Academy</span>
       </header>
       <form @submit.prevent="login">
-        <h2>Login</h2>
+        <span class="headline font-weight-thin black--text"><b>Login</b></span>
         <div class="divError">
           <p v-if="error" class="error">{{ error }}</p>
         </div>
@@ -18,9 +18,9 @@
         <input type="submit">
       </form>
 
-      <p class="reg-page">
+      <p class="reg-page black--text">
         Don't have an account?
-        <router-link to="/register">Sign Up</router-link>
+        <router-link class="black--text" to="/register">Sign Up</router-link>
       </p>
     </div>
   </div>
@@ -47,9 +47,10 @@ export default {
           password: this.password
         };
         var loginData = await Service.login(user);
+        console.log(loginData);
         if (loginData.data.status === false) {
           this.error = loginData.data.msg;
-        } else {
+        }  else {
             this.$router.push(`/dashboard/${loginData.data.user.id}`);
         }
       }
@@ -85,7 +86,7 @@ h2 {
   color: white;
 }
 .login {
-  background-color: rgb(192, 192, 192, 0.3);
+  background-color: rgb(192, 192, 192, 0.7);
   text-align: center;
   margin: auto;
   width: 375px;
@@ -96,7 +97,7 @@ h2 {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 .divError {
-  min-height: 30px;
+  min-height: 1px;
 }
 .error {
   border: 1px solid #ff5b5f;
@@ -115,8 +116,8 @@ input[type="text"] {
   padding: 5px;
   width: 54%;
   margin-top: 20px;
-  border: 1px solid white;
-  color: white;
+  border: 1px solid black;
+  color: black;
 }
 
 input[type="password"] {
@@ -124,12 +125,12 @@ input[type="password"] {
   padding: 5px;
   width: 54%;
   margin-top: 20px;
-  border: 1px solid white;
-  color: white;
+  border: 1px solid black;
+  color: black;
 }
 ::-webkit-input-placeholder {
   /* Chrome/Opera/Safari */
-  color: white;
+  color: black;
 }
 input[type="submit"] {
   background-color: #007bff;

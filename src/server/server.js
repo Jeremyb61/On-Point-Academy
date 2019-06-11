@@ -10,6 +10,8 @@ var session = require('express-session');
 const path = require('path');
 const multer = require('multer')
 const cloudinary = require('cloudinary');
+const credentials = require('../../src/modules/credentials.js');
+
 
 // Vimeo Middleware
 const Vimeo = require('vimeo').Vimeo;
@@ -27,15 +29,21 @@ app.use(cors({
 }));
 
 // Session Config
-app.set('trust proxy', 1)
-app.use(session({
-    secret: 'keyboard cat',
+const sessConfig = {
+    secret: credentials,
     resave: false,
     saveUninitialized: true,
     cookie: {
         maxAge: 60000 * 60 * 24
     }
-}));
+}
+
+if (app.get('env') === 'production') {
+    app.set('trust proxy', 1);
+    sessConfig.cookie.secure = true;
+}
+
+app.use(session(sessConfig));
 
 
 //Image upload start
@@ -75,14 +83,6 @@ cloudinary.config({
     api_secret: '9hGgdjABHxUUAgPnZm7PkFMTbFw'
 });
 //Image upload end
-
-// const errArray = [];
-// const getErrorResponse = (req,res, next) => {
-//     res.json({
-//         errArray
-//     })
-// }
-
 
 // DB Config
 const sequelize = new Sequelize('onPointAccademy', 'root', 'root', {
@@ -389,6 +389,16 @@ sequelize.sync({
 // Routes
 const Op = Sequelize.Op;
 
+const redirectLogin = (req, res, next) => {
+    if (!req.session.user) {
+        res.json({
+            error: "not logged in"
+        });
+    } else {
+        next();
+    }
+}
+
 // Register user
 app.post('/api/user', (req, res) => {
     if (req.body.password != req.body.confirmPassword) {
@@ -431,7 +441,6 @@ app.post('/api/user/login', (req, res) => {
             });
         } else {
             bcrypt.compare(req.body.password, user.dataValues.password, (err, result) => {
-                console.log("DFSDFSDFS", user);
                 if (err) {
                     console.log('ERROR at bcrpt compare', err);
                     res.json({
@@ -443,11 +452,21 @@ app.post('/api/user/login', (req, res) => {
                         msg: 'Invalid username or password'
                     });
                 } else {
+                    req.session.user = user.id;
                     res.json({
                         user
                     })
                 }
             })
+        }
+    })
+})
+
+// Sign Out User
+app.get('/api/user/sign-out', (req,res) => {
+    req.session.destroy(function(err) {
+        if (err) {
+            console.log('Session Destroy Error' ,err)
         }
     })
 })
@@ -519,7 +538,7 @@ app.get('/api/groups/:id', (req, res) => {
 app.get('/api/chapters/groups', (req, res) => {
     GroupChapter.findAll({
         include: [{
-            model: GroupCourse
+            model: GroupCourse,
         }]
     })
         .then((data) => {
@@ -922,6 +941,19 @@ app.get('/api/group-answers-submitted/:id/:courseId/:group', (req, res) => {
                     console.log(err);
                     res.json(err)
                 })
+        })
+})
+
+app.get('/api/get-group-completes/:userId', (req, res) => {
+    sequelize.query('SELECT * FROM group_course_completes WHERE userId = ?',
+        {
+            replacements: [req.params.userId],
+            type: sequelize.QueryTypes.SELECT
+        }).then((gCourseCompletes) => {
+            console.log("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD", gCourseCompletes);
+            res.json({
+                gCourseCompletes
+            })
         })
 })
 

@@ -34,6 +34,9 @@
           <div v-for="course in item.group_courses" :key="course.id">
             <v-card @click="goToGroupCourse(course.id)">
               <v-card-text class="grey lighten-3">{{ course.title }}</v-card-text>
+              <!-- <p v-for="(complete,index) in groupCourseCompletes" :key="index">
+                <v-icon v-if="groupCourseId[index] === course.id[index] && groupParam === complete.groupId" color="success" right>done</v-icon>
+              </p> -->
             </v-card>
           </div>
         </v-expansion-panel-content>
@@ -41,25 +44,48 @@
     </v-navigation-drawer>
     <!-- End Side Nav Bar -->
     <div class="container">
-      <img :src="currentGroup.icon" width="200px;">
-
-      <div class="answers-div" v-for="chap in groupAnswers" :key="chap.id">
-        <h2>{{ chap.title }}</h2>
-        <hr>
-        <div v-for="course in chap.group_courses" :key="course.id">
-          <div v-for="(question,index) in course.group_course_questions" :key="question.id">
-            <div v-if="question.question_content[index]">
-              <div class="answer grey lighten-3">
-                <p>{{ question.question_content }}</p>
-                <p
-                  v-for="answer in question.groups"
-                  :key="answer.id"
-                >{{ answer.group_course_answers.answer_content }}</p>
+      <v-container grid-list-xl>
+        <v-layout wrap>
+          <v-flex>
+            <v-sheet elevation="8" class="mx-auto" min-height="500" width="100%">
+              <div style="text-align:center;">
+                <img :src="currentGroup.icon">
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              <div class="answers-div" v-for="chap in groupAnswers" :key="chap.id">
+                <v-list two-line>
+                  <template>
+                    <v-subheader>
+                      <h2>{{ chap.title }}</h2>
+                    </v-subheader>
+                    <v-divider></v-divider>
+
+                    <div v-for="course in chap.group_courses" :key="course.id">
+                      <v-list-tile
+                        v-for="(question,index) in course.group_course_questions"
+                        :key="question.id"
+                      >
+                        <v-list-tile-content 
+                        v-if="question.question_content[index]"
+                        ripple
+                        >
+                          <v-list-tile-title>{{ question.question_content }}</v-list-tile-title>
+                          <v-list-tile-sub-title
+                            v-for="answer in question.groups"
+                            :key="answer.id"
+                          >{{ answer.group_course_answers.answer_content }}
+                          </v-list-tile-sub-title>
+                        </v-list-tile-content>
+                    </v-list-tile>
+                      </div>
+                  </template>
+                </v-list>
+
+                <hr>
+              </div>
+            </v-sheet>
+          </v-flex>
+        </v-layout>
+      </v-container>
     </div>
   </div>
 </template>
@@ -70,19 +96,21 @@ export default {
   name: "GroupDashboard",
   data() {
     return {
+      groupParam: this.$route.params.groupId,
       sideNavBar: false,
       panel: [false],
       groups: [],
       groupAnswers: [],
       groupChapters: [],
       usersFirstname: "",
-      currentGroup: {}
+      currentGroup: {},
+      groupCourseCompletes: []
     };
   },
   watch: {
     async $route(to, from) {
       var myGroup = await Service.getCurrentGroup(to.params.group);
-      console.log(myGroup);
+    //   console.log(myGroup);
       this.currentGroup = myGroup.data.group;
 
       var groupData = await Service.getOtherGroups(
@@ -93,7 +121,7 @@ export default {
 
       var answerData = await Service.getGroupQuestionsAnswers(to.params.group);
       this.groupAnswers = answerData.data.answers;
-      console.log(this.groupAnswers);
+    //   console.log(this.groupAnswers);
     }
   },
   async created() {
@@ -106,7 +134,7 @@ export default {
       // Get Current Group title
       var myGroup = await Service.getCurrentGroup(this.$route.params.group);
       this.currentGroup = myGroup.data.group;
-      console.log(this.currentGroup);
+    //   console.log(this.currentGroup);
 
       // Get all others groups that user belongs to
       var groupData = await Service.getOtherGroups(
@@ -114,16 +142,24 @@ export default {
         this.$route.params.group
       );
       this.groups = groupData.data.usersGroups.groups;
+      
+      //Get all group course completes
+      var groupCourseComplete = await Service.getGroupCourseCompletes(
+        this.$route.params
+      );
+      this.groupCourseCompletes = groupCourseComplete.data.gCourseCompletes;
+      console.log(groupCourseComplete.data.gCourseCompletes)
 
       // Get all Group chapters
       var groupChaptersData = await Service.getGroupChapters();
       this.groupChapters = groupChaptersData.data.data;
 
+
       var answerData = await Service.getGroupQuestionsAnswers(
         this.$route.params.group
       );
       this.groupAnswers = answerData.data.answers;
-      console.log(this.groupAnswers);
+    //   console.log(this.groupAnswers);
     } catch (err) {
       console.log("ERROR", err);
     }
@@ -148,10 +184,14 @@ export default {
 <style scoped>
 .answers-div {
   min-height: 100px;
+  padding: 25px;
 }
 .answer {
   margin-top: 15px;
   min-height: 57px;
+}
+img {
+  width: 200px;
 }
 </style>
 

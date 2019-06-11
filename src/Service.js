@@ -66,8 +66,13 @@ class Service {
     static getGroupQuestionsAnswers(group) {
         return axios.get(`${url}/api/get-group-answers/${group}`);
     }
+    static getGroupCourseCompletes(params) {
+        return axios.get(`${url}/api/get-group-completes/${params.id}`);
+    }
+    static signOutUser() {
+        return axios.get(`${url}/api/user/sign-out`);
+    }
  
 }
-
 
 export default Service;

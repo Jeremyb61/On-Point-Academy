@@ -38,7 +38,7 @@ export default [
         component: PersonalCourse 
     },
     { 
-        path: '/:id/:group', 
+        path: '/group-dashboard/:id/:groupId/:group', 
         component: GroupDashboard 
     },
     { 

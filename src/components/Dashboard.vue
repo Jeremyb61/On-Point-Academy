@@ -12,7 +12,7 @@
           </template>
           <v-list>
             <div v-for="(group, index) in groups" :key="index">
-              <v-list-tile @click="goToGroup(group.title)">
+              <v-list-tile @click="goToGroup(group.title, group.id)">
                 <v-list-tile-title>{{ group.title }}</v-list-tile-title>
               </v-list-tile>
             </div>
@@ -30,7 +30,7 @@
             </div>
           </v-list>
         </v-menu>
-        <v-btn flat router to="/" class="hidden-xs-only">Sign out</v-btn>
+        <v-btn flat @click="signOut" class="hidden-xs-only">Sign out</v-btn>
       </v-toolbar-items>
       <v-toolbar-side-icon class="hidden-sm-and-up" @click="mobilePanel = !mobilePanel"></v-toolbar-side-icon>
     </v-toolbar>
@@ -38,7 +38,7 @@
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
-    <v-navigation-drawer width="230" v-model="sideNavBar" app class="accent">
+    <v-navigation-drawer width="230" v-model="sideNavBar" app class="accent" disable-resize-watcher>
       <v-expansion-panel v-model="panel" expand>
         <v-expansion-panel-content v-for="item in personalChapters" :key="item.id">
           <template v-slot:header>
@@ -58,7 +58,7 @@
     <!-- End Side Nav Bar -->
 
     <!-- Mobile Expansion Panel -->
-    <v-navigation-drawer
+    <!-- <v-navigation-drawer
       width="220"
       class="hidden-sm-and-up accent"
       right
@@ -72,55 +72,59 @@
           </template>
         </v-expansion-panel-content>
       </v-expansion-panel>
-    </v-navigation-drawer>
+    </v-navigation-drawer> -->
     <!-- End Mobile Expansion Panel -->
 
     <!-- Dashboard Content -->
-    <div class="container" justify-center>
-      <v-layout row wrap justify-center>
-        <v-flex xs12 s12 md12 lg12 xl12 justify-center>
-          <div class="radial-container">
-          <radial-progress-bar
-            :diameter="240"
-            :completed-steps="totalComplete"
-            :total-steps="totalSteps"
-            :strokeWidth="15"
-            startColor="green"
-            stopColor="red"
-            :animateSpeed="600"
-          >
-    
-            <div class="main-icon-div">
-              <img class="profile-pic" :src="image">
-            </div>
-          </radial-progress-bar>
+
+    <!-- Profile Pic -->
+    <v-container class="my-5">
+      <v-layout justify-center>
+        <v-flex xs6 sm4 md4 lg2 xl2 >
+          <div>
+           
+            <radial-progress-bar
+              :diameter="240"
+              :completed-steps="totalComplete"
+              :total-steps="totalSteps"
+              :strokeWidth="15"
+              startColor="green"
+              stopColor="red"
+              :animateSpeed="600"
+            >
+              <div class="main-icon-div">
+                <img class="profile-pic" :src="image">
+              </div>
+            </radial-progress-bar>
           </div>
         </v-flex>
       </v-layout>
-      <v-layout row wrap justify-center>
-        <v-flex xs12 s12 md12 lg12 xl12 justify-center>
-          <div
-            style="display:inline-block;"
-            v-for="(chapter,index) in personalChapters"
+    </v-container>
+
+    <!-- Courses  -->
+    <v-container>
+        <v-layout row wrap justify-space-between >
+        <v-flex
+            v-for="(chapter,index) in personalChapters" 
             :key="index"
-          >
-            <div @click="goToAnswerPage(chapter.id)">
-              <radial-progress-bar
-                :diameter="160"
-                :completed-steps="value[index]"
-                :total-steps="totalSteps"
-                :strokeWidth="15"
-                :startColor="colors[index]"
-                :stopColor="colors[index]"
-                :animateSpeed="600"
-              >
-                <img class="icon" :src="icons[index]" alt>
-              </radial-progress-bar>
-            </div>
+            xs6 sm3 md3 lg1 xl1
+            >
+          <div @click="goToAnswerPage(chapter.id)">
+            <radial-progress-bar
+              :diameter="160"
+              :completed-steps="value[index]"
+              :total-steps="totalSteps"
+              :strokeWidth="15"
+              :startColor="colors[index]"
+              :stopColor="colors[index]"
+              :animateSpeed="600"
+            >
+              <img class="icon" :src="icons[index]" alt>
+            </radial-progress-bar>
           </div>
         </v-flex>
-      </v-layout>
-    </div>
+        </v-layout>
+    </v-container >
     <!-- End DashBoard Content  -->
   </div>
 </template>
@@ -173,52 +177,58 @@ export default {
     try {
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
-      this.user = userData.data.user;
-      this.image = userData.data.user.image;
+      if (userData.data.error) {
+        this.$router.push(`/login`);
+      } else {
+        this.user = userData.data.user;
+        this.image = userData.data.user.image;
 
-      // Get all groups that this user belongs to
-      var groupData = await Service.getGroups(this.$route.params.id);
-      this.groups = groupData.data.usersGroups.groups;
-        
-      // Get all personal chapters and courses
-      var personalChaptersData = await Service.getPersonalChapters();
-      this.personalChapters = personalChaptersData.data.data;
+        // Get all groups that this user belongs to
+        var groupData = await Service.getGroups(this.$route.params.id);
+        this.groups = groupData.data.usersGroups.groups;
 
-      //Get all personal course completes
-      var userTotal = 0;
-      var courseTotal = 0;
-      for (var i in this.personalChapters) {
-        var getCompletes = await Service.getCompletes(
-          this.$route.params.id,
-          this.personalChapters[i].id
-        );
+        // Get all personal chapters and courses
+        var personalChaptersData = await Service.getPersonalChapters();
+        this.personalChapters = personalChaptersData.data.data;
 
-        // Concatenating Users overall progress and putting in data()
-        userTotal += getCompletes.data.user.count;
-        courseTotal += getCompletes.data.courses.count;
-        this.overallProgress = `${userTotal}/${courseTotal}`;
+        //Get all personal course completes
+        var userTotal = 0;
+        var courseTotal = 0;
+        for (var i in this.personalChapters) {
+          var getCompletes = await Service.getCompletes(
+            this.$route.params.id,
+            this.personalChapters[i].id
+          );
 
-        // Concatenating Users individual course progress and putting in data()
-        var completes = `${getCompletes.data.user.count}/${
-          getCompletes.data.courses.count
-        }`;
-        this.progress.push(completes);
+          // Concatenating Users overall progress and putting in data()
+          userTotal += getCompletes.data.user.count;
+          courseTotal += getCompletes.data.courses.count;
+          this.overallProgress = `${userTotal}/${courseTotal}`;
 
-        // Getting value for progress bars
-        var numerator = parseInt(completes);
-        this.value.push(numerator * 20);
+          // Concatenating Users individual course progress and putting in data()
+          var completes = `${getCompletes.data.user.count}/${
+            getCompletes.data.courses.count
+          }`;
+          this.progress.push(completes);
+
+          // Getting value for progress bars
+          var numerator = parseInt(completes);
+          this.value.push(numerator * 20);
+        }
+        var a = this.overallProgress;
+        var split = a.split("/");
+        var result = parseInt(split[0], 10) / parseInt(split[1], 10);
+        this.totalComplete = Math.floor(result * 100);
       }
-      var a = this.overallProgress;
-      var split = a.split("/");
-      var result = parseInt(split[0], 10) / parseInt(split[1], 10);
-      this.totalComplete = Math.floor(result * 100);
     } catch (err) {
       console.log(err);
     }
   },
   methods: {
-    goToGroup(groupTitle) {
-      this.$router.push(`/${this.$route.params.id}/${groupTitle}`);
+    goToGroup(groupTitle, groupId) {
+      this.$router.push(
+        `/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`
+      );
     },
     goToCourse(courseId) {
       this.$router.push(`/dashboard/${this.$route.params.id}/${courseId}`);
@@ -230,23 +240,21 @@ export default {
       this.$router.push(
         `/dashboard/${this.$route.params.id}/summary/${courseId}`
       );
+    },
+    signOut() {
+      Service.signOutUser();
+      this.$router.push(`/login`);
     }
   }
 };
 </script>
 <style scoped>
-.container {
-  margin: auto;
-}
-.radial-container {
-    margin:auto;
-}
+
 .main-icon-div {
   border: 5px solid rgba(97, 24, 24, 0.986);
   border-radius: 100px;
   height: 200px;
   width: 200px;
-  margin: auto;
   display: block;
 }
 .profile-pic {
@@ -277,8 +285,55 @@ export default {
 }
 .v-progress-circular {
   border-radius: 51%;
-  margin-left:50%;
+  /* margin-left: 50%; */
 }
+/* @media only screen and (max-width: 1650px) {
+  .container {
+    margin-left: 15%;
+  }
+}
+@media only screen and (max-width: 1550px) {
+  .container {
+    margin-left: 12%;
+  }
+}
+@media only screen and (max-width: 1400px) {
+  .container {
+    margin-left: 8%;
+  }
+}
+
+@media only screen and (max-width: 1265px) {
+ .radial-container {
+    margin-left: 36%;
+  } 
+ }
+@media only screen and (max-width: 1105px) {
+  .radial-container {
+    margin-left: 34.5%;
+  }
+}
+@media only screen and (max-width: 700px) {
+  .radial-container {
+    margin-left: 30%;
+  }
+}
+@media only screen and (max-width: 600px) {
+  .radial-container {
+    margin-left: 27%;
+  }
+}
+@media only screen and (max-width: 500px) {
+  .radial-container {
+    margin-left: 22%;
+  }
+}
+@media only screen and (max-width: 415px) {
+  .radial-container {
+    margin-left: 15%;
+  } 
+} */
+
 </style>
 
 
