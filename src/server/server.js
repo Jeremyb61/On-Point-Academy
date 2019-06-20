@@ -293,6 +293,9 @@ GroupCourse.init({
     },
     video_url: {
         type: Sequelize.TEXT
+    },
+    location: {
+        type: Sequelize.INTEGER 
     }
 },
     { sequelize, modelName: 'group_course' })
@@ -326,9 +329,6 @@ GroupCourseAnswer.init({
     answer_content: {
         type: Sequelize.TEXT
     },
-    userId: {
-        type: Sequelize.INTEGER
-    },
 },
     { sequelize, modelName: 'group_course_answers' })
 
@@ -350,6 +350,14 @@ GroupChapter.hasMany(GroupCourse, { foreignKey: 'group_chaptersId' })
 GroupCourse.hasMany(GroupCourseQuestion, { foreignKey: 'group_courseId' })
 PersonalCourse.hasMany(PersonalCourseQuestion, { foreignKey: 'personal_courseId' })
 
+User.hasMany(GroupCourseAnswer, { foreignKey: 'userId' })
+Group.hasMany(GroupCourseAnswer, { foreignKey: 'groupId' })
+GroupCourseQuestion.hasMany(GroupCourseAnswer, { foreignKey: 'groupCourseQuestionId' })
+
+User.hasMany(GroupCourseComplete, { foreignKey: 'userId' })
+Group.hasMany(GroupCourseComplete, { foreignKey: 'groupId' })
+GroupCourse.hasMany(GroupCourseComplete, { foreignKey: 'groupCourseId' })
+
 //////////////////////// -- Many - to - Many -- ////////////////////////////////////////////
 
 // Tracks which personal chapters a user has completed
@@ -365,8 +373,9 @@ User.belongsToMany(Group, { through: 'users_in_groups' })
 Group.belongsToMany(User, { through: 'users_in_groups' })
 
 // Tracks the GROUP COURSES that a USER completes
-Group.belongsToMany(GroupCourse, { through: 'group_course_completes' })
-GroupCourse.belongsToMany(Group, { through: 'group_course_completes' })
+// Group.belongsToMany(GroupCourse, { through: 'group_course_completes' })
+// GroupCourse.belongsToMany(Group, { through: 'group_course_completes' })
+// User.hasMany(GroupCourseComplete, { foreignKey: 'userId' })
 
 // Tracks the group CHAPTERS that a GROUP completes
 Group.belongsToMany(GroupChapter, { through: 'group_chapter_completes' })
@@ -376,10 +385,9 @@ GroupChapter.belongsToMany(Group, { through: 'group_chapter_completes' })
 User.belongsToMany(PersonalCourseQuestion, { through: 'personal_course_answers' })
 PersonalCourseQuestion.belongsToMany(User, { through: 'personal_course_answers' })
 
-// Tracks which answer belongs to which user/group course question
-Group.belongsToMany(GroupCourseQuestion, { through: 'group_course_answers' })
-GroupCourseQuestion.belongsToMany(Group, { through: 'group_course_answers' })
-
+// // Tracks which answer belongs to which user/group course question
+// Group.belongsToMany(GroupCourseQuestion, { through: 'group_course_answers' })
+// GroupCourseQuestion.belongsToMany(Group, { through: 'group_course_answers' })
 
 sequelize.sync({
     // force: true 
@@ -463,11 +471,10 @@ app.post('/api/user/login', (req, res) => {
 })
 
 // Sign Out User
-app.get('/api/user/sign-out', (req,res) => {
-    req.session.destroy(function(err) {
-        if (err) {
-            console.log('Session Destroy Error' ,err)
-        }
+app.get('/api/user/sign-out', (req, res) => {
+    req.session.destroy(function (err) {
+        if (err) console.log('Session Destroy Error', err);
+
     })
 })
 
@@ -669,21 +676,13 @@ app.post('/api/submit-complete/:userId/:courseId', (req, res) => {
                 where: {
                     id: req.params.courseId
                 }
-            }).then((pCourse) => {
-                pCourse.setUsers(
+            })
+            .then((course) => {
+                course.setUsers(
                     req.params.userId
-                ).then((completion) => {
-                    res.json({
-                        completion
-                    })
-                }).catch((err) => {
-                    res.json({
-                        err
-                    })
-                })
-            }).catch((err) => {
+                )
                 res.json({
-                    err
+                    course
                 })
             })
         } else {
@@ -719,7 +718,7 @@ app.put('/api/image/:id', upload.single('image'), (req, res) => {
     })
 })
 
-app.get('/api/completes/:id/:chId', (req, res) => {
+app.get('/api/completes-count/:id/:chId', (req, res) => {
     PersonalChapter.findAndCountAll({
         include: [{
             model: PersonalCourse,
@@ -829,46 +828,17 @@ app.post('/api/group-answers/:id/:group/:courseId', (req, res) => {
                     groupCourseQuestionId: req.body.questionId,
                     userId: req.params.id,
                 }).then((newAnswerSub) => {
-                    GroupCourseComplete.findOne({
-                        where: {
-                            [Op.and]: [
-                                { groupCourseId: req.params.courseId },
-                                { userId: req.params.id },
-                                { groupId: group.id }
-                            ]
-                        }
-                    })
-                        .then((courseCompletes) => {
-                            if (!courseCompletes) {
-                                console.log("HERERERERERER!!!!!")
-                                GroupCourseComplete.create({
-                                    groupId: group.id,
-                                    userId: req.params.id,
-                                    groupCourseId: req.params.courseId
-                                }).then((completion) => {
-                                    console.log("COMPLETION --- ", completion)
-                                    res.json({
-                                        newAnswerSub,
-                                        courseCompletes,
-                                        completion
-                                    })
-                                }).catch((err) => {
-                                    console.log(err);
-                                    res.json({
-                                        err
-                                    })
-                                })
-                            } else {
-                                res.json({
-                                    newAnswerSub,
-                                    courseCompletes
-                                })
-                            }
-                        })
-                }).catch((err) => {
                     res.json({
-                        err
+                        newAnswerSub,
+
                     })
+                        .catch((err) => {
+                            console.log(err);
+                            res.json({
+                                err
+                            })
+                        })
+
                 })
             } else {
                 answer.update({
@@ -891,28 +861,36 @@ app.post('/api/group-answers/:id/:group/:courseId', (req, res) => {
     })
 })
 
-app.get('/api/get-group-answers/:group', (req, res) => {
-    console.log(req.params);
+app.get('/api/get-group-answers/:groupId/:userId', (req, res) => {
+    console.log(req.params)
     GroupChapter.findAll({
         include: [{
             model: GroupCourse,
             include: [{
-                model: GroupCourseQuestion,
-                include: [{
-                    model: Group,
-                    where: {
-                        title: req.params.group
-                    }
-                }]
+                model: GroupCourseQuestion
             }]
         }]
     })
-        .then((answers) => {
-            res.json({
-                answers
-            })
+        .then((questions) => {
+            sequelize.query('SELECT * FROM onpointaccademy.group_course_answers WHERE userId = ? AND groupId = ?',
+                {
+                    replacements: [req.params.userId, req.params.groupId],
+                    type: sequelize.QueryTypes.SELECT
+                })
+                .then((answers) => {
+                    res.json({
+                        questions,
+                        answers
+                    })
+                })
+                .catch((err) => {
+                    console.log(err);
+                    res.json(err)
+                })
+
         })
         .catch((err) => {
+            console.log(err);
             res.json({
                 err
             })
@@ -944,17 +922,124 @@ app.get('/api/group-answers-submitted/:id/:courseId/:group', (req, res) => {
         })
 })
 
-app.get('/api/get-group-completes/:userId', (req, res) => {
-    sequelize.query('SELECT * FROM group_course_completes WHERE userId = ?',
-        {
-            replacements: [req.params.userId],
-            type: sequelize.QueryTypes.SELECT
-        }).then((gCourseCompletes) => {
-            console.log("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD", gCourseCompletes);
+app.get('/api/group-complete/:userId/:courseId/:group', (req, res) => {
+    Group.findOne({
+        where: {
+            title: req.params.group
+        }
+    }).then((group) => {
+        GroupCourseComplete.findOne({
+            where: {
+                [Op.and]: [
+                    { groupCourseId: req.params.courseId },
+                    { userId: req.params.userId },
+                    { groupId: group.id }
+                ]
+            }
+        })
+            .then((courseCompletes) => {
+                if (!courseCompletes) {
+                    console.log("HERERERERERER!!!!!");
+                    GroupCourseComplete.create({
+                        groupId: group.id,
+                        userId: req.params.userId,
+                        groupCourseId: req.params.courseId
+                    }).then((completion) => {
+                        console.log("COMPLETION --- ", completion)
+                        res.json({
+                            completion
+                        })
+                    })
+                } else {
+                    res.json({
+                        courseCompletes
+                    })
+                }
+            })
+    })
+})
+
+
+app.get('/api/group/get-complete/:userId/:group', (req, res) => {
+    console.log(req.params.group)
+    Group.findOne({
+        where: {
+            title: req.params.group
+        }
+    }).then((group) => {
+        console.log(group)
+        GroupCourseComplete.findAll({
+            where: {
+                [Op.and]: [
+                    { userId:req.params.userId },
+                    { groupId: group.id },
+                ]
+            }
+        }).then((completes) => {
             res.json({
-                gCourseCompletes
+                completes
             })
         })
+        .catch((err) => {
+            console.log(err);
+            res.json({
+                err
+            })
+        })
+    })
+})
+
+app.get('/api/group/get-one-complete/:id/:group/:courseId', (req,res) => {
+    Group.findOne({
+        where: {
+            title: req.params.group
+        }
+    }).then((group) => {
+        GroupCourseComplete.findOne({
+            where: {
+                groupId: group.id,
+                userId: req.params.id,
+                groupCourseId: req.params.courseId
+            }
+        }).then((complete) => {
+            res.json({
+                complete
+            })
+        }).catch((err) => {
+            console.log(err);
+            res.json({
+                err
+            })
+        })
+    })
+})
+app.delete('/api/group/delete-complete/:id/:group/:courseId', (req,res) => {
+    Group.findOne({
+        where: {
+            title: req.params.group
+        }
+    }).then((group) => {
+        GroupCourseComplete.findOne({
+            where: {
+                groupId: group.id,
+                userId: req.params.id,
+                groupCourseId: req.params.courseId
+            }
+        }).then((uncomplete) => {
+            console.log("DSGFSDFSDFDSFDS")
+            uncomplete.destroy({
+                force:true
+            });
+            res.json({
+                uncomplete
+            })
+        }).catch((err) => {
+            console.log(err);
+            res.json({
+                err
+            })
+        })
+    })
 })
 
 // Port 

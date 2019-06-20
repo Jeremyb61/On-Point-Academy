@@ -71,8 +71,8 @@
               height="150"
             ></v-textarea>
           </div>
-          <v-alert v-model="submitVal" type="success" dismissible>Answers submitted successfully</v-alert>
-          <v-btn @click="submitAnswers">Submit</v-btn>
+          <v-alert v-model="submitVal" type="success" dismissible>Answers saved successfully</v-alert>
+          <v-btn @click="submitAnswers">Save</v-btn>
         </form>
       </div>
       <!-- End Course Content -->
@@ -189,6 +189,7 @@ export default {
         this.$route.params.id,
         this.$route.params.courseId
       );
+      console.log('here')
     }
   }
 };

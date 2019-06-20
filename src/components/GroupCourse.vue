@@ -33,7 +33,12 @@
           </template>
           <div v-for="course in item.group_courses" :key="course.id">
             <v-card @click="goToGroupCourse(course.id)">
-              <v-card-text class="grey lighten-3">{{ course.title }}</v-card-text>
+              <v-card-text class="grey lighten-3">
+                {{ course.title }}
+                <span v-for="(complete,index) in groupCompletes" :key="index">
+                  <v-icon v-if="complete.groupCourseId === course.id" color="success" right>done</v-icon>
+                </span>
+              </v-card-text>
             </v-card>
           </div>
         </v-expansion-panel-content>
@@ -68,8 +73,10 @@
               height="150"
             ></v-textarea>
           </div>
-          <v-alert v-model="submitVal" type="success" dismissible>Answers submitted successfully</v-alert>
-          <v-btn @click="submitAnswers">Submit</v-btn>
+          <v-alert v-model="submitVal" type="success" dismissible>Answers saved successfully</v-alert>
+          <v-btn @click="submitAnswers">Save</v-btn>
+          <v-btn v-if="complete===false" :disabled="noContinue" @click="submitComplete">Complete</v-btn>
+          <v-btn v-else @click="deleteComplete">uncomplete?</v-btn>
         </form>
       </div>
     </div>
@@ -79,10 +86,13 @@
 
 <script>
 import Service from "../Service.js";
+import { setTimeout } from "timers";
 export default {
   name: "GroupCourse",
   data() {
     return {
+      complete: Boolean,
+      noContinue: true,
       sideNavBar: false,
       panel: [false],
       groups: [],
@@ -93,11 +103,14 @@ export default {
       questions: [],
       answer: [],
       submitVal: false,
+      answerStatus: [],
+      groupCompletes: []
     };
   },
   watch: {
     async $route(to, from) {
       try {
+        window.scrollTo(0, 0);
         // Get course content
         var CourseContent = await Service.getGroupCourseContent(
           this.$route.params
@@ -113,13 +126,33 @@ export default {
           this.answer.push(answerData.data.answers[i].answer_content);
         }
         this.submitVal = false;
+
+        var checkComplete = await Service.checkForComplete(this.$route.params);
+        if (!checkComplete.data.complete) {
+          this.complete = false;
+        } else {
+          this.complete = true;
+        }
+
+        console.log(this.complete);
       } catch (err) {
         console.log("ERROR ", err);
+      }
+    },
+    answer: function() {
+      for (var i in this.answer) {
+        if (this.answer[i] === "") {
+          this.noContinue = true;
+        } else {
+          this.noContinue = false;
+        }
       }
     }
   },
   async created() {
     try {
+      window.scrollTo(0, 0);
+
       // Get User Data
       console.log(this.$route.params);
       var userData = await Service.getUserProfile(this.$route.params.id);
@@ -139,12 +172,14 @@ export default {
       // Get all Group chapters
       var groupChaptersData = await Service.getGroupChapters();
       this.groupChapters = groupChaptersData.data.data;
+      console.log("groupChapters", this.groupChapters);
 
       var CourseContent = await Service.getGroupCourseContent(
         this.$route.params
       );
       this.courseData = CourseContent.data.course;
       this.questions = CourseContent.data.course.group_course_questions;
+      console.log(this.courseData);
 
       var answerData = await Service.getSubmittedGroupAnswers(
         this.$route.params
@@ -152,7 +187,21 @@ export default {
       for (var i in answerData.data.answers) {
         this.answer.push(answerData.data.answers[i].answer_content);
       }
-      console.log(this.answer);
+
+      var checkComplete = await Service.checkForComplete(this.$route.params);
+      if (!checkComplete.data.complete) {
+        this.complete = false;
+      } else {
+        this.complete = true;
+      }
+      console.log(this.complete);
+
+      //Get all group course completes
+      var groupCourseComplete = await Service.getGroupCourseCompletes(
+        this.$route.params
+      );
+      this.groupCompletes = groupCourseComplete.data.completes;
+      console.log(this.groupCompletes);
     } catch (err) {
       console.log("ERROR ", err);
     }
@@ -174,11 +223,7 @@ export default {
       this.groups = groupData.data.usersGroups.groups;
     },
     goToGroupCourse(courseId) {
-      this.$router.push(
-        `/dashboard/${this.$route.params.id}/${
-          this.$route.params.group
-        }/${courseId}`
-      );
+      this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId}`);
     },
     backToDashboard() {
       this.$router.push(
@@ -197,15 +242,53 @@ export default {
           this.$route.params
         );
       }
-      if(submitResponse.data.newAnswer) {
-          this.submitVal = true;
-      }
+      if (submitResponse.data.newAnswer) this.submitVal = true;
 
-      console.log("submit response", submitResponse);
-      //   var groupCourseCompleteData = await Service.submitGroupCourseCompletion(
-      //     this.$route.params
-      //   );
-      //   console.log(groupCourseCompleteData);
+      console.log("Submit Response", submitResponse);
+    },
+    async submitComplete() {
+      this.submitAnswers();
+      await Service.submitGroupCourseCompletion(this.$route.params);
+      var courseId = parseInt(this.$route.params.courseId);
+      //   this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${courseId+1}`)
+      console.log("pre for");
+      for (var i in this.groupChapters) {
+        for (var j in this.groupChapters[i].group_courses) {
+          //       console.log(this.groupChapters[i].group_courses[j], j);
+          //       console.log(this.groupChapters[i].group_courses[j].group_chaptersId);
+          if (this.courseData.location === this.groupChapters[i].group_courses[j].location) {
+            if (this.groupChapters[i].group_courses[parseInt(j) + 1] === undefined) {
+              console.log("Chapter Completed - back to dashboard");
+              this.$router.push(`/group-dashboard/${this.$route.params.id}/1/${this.$route.params.group}`)
+                // /group-dashboard/:id/:groupId/:group
+            } else {
+              var currentCourseLocation = this.courseData.location;
+              var nextCourseLocation = this.groupChapters[i].group_courses[parseInt(j) + 1].location;
+              var nextLocArr = ("" + nextCourseLocation).split("");
+              var currentLocArr = ("" + currentCourseLocation).split("");
+              console.log("current", currentLocArr);
+              console.log("next", nextLocArr);
+              if (currentLocArr[0] === nextLocArr[0]) {
+                console.log("Course Completed - next course");
+                this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId + 1}`
+                );
+              }
+            }
+
+            //         console.log("this should go back to dashboard");
+
+            //       } else {   
+            //         console.log("this should go forward");
+          }
+        }
+      }
+    },
+    async deleteComplete() {
+      var delComplete = await Service.deleteGroupCourseCompletion(
+        this.$route.params
+      );
+      this.complete = false;
+      console.log(delComplete);
     }
   }
 };

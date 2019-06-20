@@ -46,7 +46,7 @@ class Service {
         return axios.put(`${url}/api/image/${userid}`,file);
     }
     static getCompletes(id,chId) {
-        return axios.get(`${url}/api/completes/${id}/${chId}`);
+        return axios.get(`${url}/api/completes-count/${id}/${chId}`);
     }
     static getAnswers(params) {
         return axios.get(`${url}/api/get-answers/${params.id}/${params.courseId}`);
@@ -63,14 +63,24 @@ class Service {
     static submitGroupAnswers(body,params) {
         return axios.post(`${url}/api/group-answers/${params.id}/${params.group}/${params.courseId}`, body);
     }
-    static getGroupQuestionsAnswers(group) {
-        return axios.get(`${url}/api/get-group-answers/${group}`);
+    static getGroupQuestionsAnswers(params) {
+        return axios.get(`${url}/api/get-group-answers/${params.groupId}/${params.id}`);
     }
-    static getGroupCourseCompletes(params) {
-        return axios.get(`${url}/api/get-group-completes/${params.id}`);
+    static submitGroupCourseCompletion(params) {
+        return axios.get(`${url}/api/group-complete/${params.id}/${params.courseId}/${params.group}`);
     }
     static signOutUser() {
         return axios.get(`${url}/api/user/sign-out`);
+    }
+    static getGroupCourseCompletes(params) {
+        return axios.get(`${url}/api/group/get-complete/${params.id}/${params.group}`);
+    }
+    static checkForComplete(params) {
+        return axios.get(`${url}/api/group/get-one-complete/${params.id}/${params.group}/${params.courseId}`);
+    }
+    static deleteGroupCourseCompletion(params) {
+        console.log("EFDSFDSFDSFDS")
+        return axios.delete(`${url}/api/group/delete-complete/${params.id}/${params.group}/${params.courseId}`);
     }
  
 }

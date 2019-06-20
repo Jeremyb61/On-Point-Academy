@@ -42,7 +42,7 @@ export default [
         component: GroupDashboard 
     },
     { 
-        path: '/dashboard/:id/:group/:courseId', 
+        path: '/dashboard/:id/:group/:groupId/:courseId', 
         component: GroupCourse 
     },
 ]

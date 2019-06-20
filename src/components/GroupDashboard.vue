@@ -33,10 +33,12 @@
           </template>
           <div v-for="course in item.group_courses" :key="course.id">
             <v-card @click="goToGroupCourse(course.id)">
-              <v-card-text class="grey lighten-3">{{ course.title }}</v-card-text>
-              <!-- <p v-for="(complete,index) in groupCourseCompletes" :key="index">
-                <v-icon v-if="groupCourseId[index] === course.id[index] && groupParam === complete.groupId" color="success" right>done</v-icon>
-              </p> -->
+              <v-card-text class="grey lighten-3">
+                {{ course.title }}
+                <span v-for="(complete,index) in groupCompletes" :key="index">
+                  <v-icon v-if="complete.groupCourseId === course.id" color="success" right>done</v-icon>
+                </span>
+              </v-card-text>
             </v-card>
           </div>
         </v-expansion-panel-content>
@@ -51,7 +53,7 @@
               <div style="text-align:center;">
                 <img :src="currentGroup.icon">
               </div>
-              <div class="answers-div" v-for="chap in groupAnswers" :key="chap.id">
+              <div class="answers-div" v-for="chap in groupQuestions" :key="chap.id">
                 <v-list two-line>
                   <template>
                     <v-subheader>
@@ -64,19 +66,16 @@
                         v-for="(question,index) in course.group_course_questions"
                         :key="question.id"
                       >
-                        <v-list-tile-content 
-                        v-if="question.question_content[index]"
-                        ripple
-                        >
+                        <v-list-tile-content v-if="question.question_content[index]" ripple>
                           <v-list-tile-title>{{ question.question_content }}</v-list-tile-title>
-                          <v-list-tile-sub-title
-                            v-for="answer in question.groups"
-                            :key="answer.id"
-                          >{{ answer.group_course_answers.answer_content }}
-                          </v-list-tile-sub-title>
+                          <div v-for="answer in groupAnswers" :key="answer.id">
+                            <v-list-tile-sub-title
+                              v-if="answer.groupCourseQuestionId == question.id"
+                            >{{ answer.answer_content }}</v-list-tile-sub-title>
+                          </div>
                         </v-list-tile-content>
-                    </v-list-tile>
-                      </div>
+                      </v-list-tile>
+                    </div>
                   </template>
                 </v-list>
 
@@ -96,21 +95,23 @@ export default {
   name: "GroupDashboard",
   data() {
     return {
+      userParam: this.$route.params.id,
       groupParam: this.$route.params.groupId,
       sideNavBar: false,
       panel: [false],
       groups: [],
+      groupQuestions: [],
       groupAnswers: [],
       groupChapters: [],
       usersFirstname: "",
       currentGroup: {},
-      groupCourseCompletes: []
+      groupCompletes: []
     };
   },
   watch: {
     async $route(to, from) {
       var myGroup = await Service.getCurrentGroup(to.params.group);
-    //   console.log(myGroup);
+      //   console.log(myGroup);
       this.currentGroup = myGroup.data.group;
 
       var groupData = await Service.getOtherGroups(
@@ -121,7 +122,7 @@ export default {
 
       var answerData = await Service.getGroupQuestionsAnswers(to.params.group);
       this.groupAnswers = answerData.data.answers;
-    //   console.log(this.groupAnswers);
+      // console.log(this.groupAnswers);
     }
   },
   async created() {
@@ -134,7 +135,6 @@ export default {
       // Get Current Group title
       var myGroup = await Service.getCurrentGroup(this.$route.params.group);
       this.currentGroup = myGroup.data.group;
-    //   console.log(this.currentGroup);
 
       // Get all others groups that user belongs to
       var groupData = await Service.getOtherGroups(
@@ -142,24 +142,24 @@ export default {
         this.$route.params.group
       );
       this.groups = groupData.data.usersGroups.groups;
-      
+
       //Get all group course completes
       var groupCourseComplete = await Service.getGroupCourseCompletes(
         this.$route.params
       );
-      this.groupCourseCompletes = groupCourseComplete.data.gCourseCompletes;
-      console.log(groupCourseComplete.data.gCourseCompletes)
+      this.groupCompletes = groupCourseComplete.data.completes;
+      console.log(this.groupCompletes);
 
       // Get all Group chapters
       var groupChaptersData = await Service.getGroupChapters();
       this.groupChapters = groupChaptersData.data.data;
 
-
       var answerData = await Service.getGroupQuestionsAnswers(
-        this.$route.params.group
+        this.$route.params
       );
+      this.groupQuestions = answerData.data.questions;
       this.groupAnswers = answerData.data.answers;
-    //   console.log(this.groupAnswers);
+      //   console.log(this.groupAnswers);
     } catch (err) {
       console.log("ERROR", err);
     }
@@ -169,10 +169,7 @@ export default {
       this.$router.push(`/${this.$route.params.id}/${group}`);
     },
     goToGroupCourse(courseId) {
-      this.$router.push(
-        `/dashboard/${this.$route.params.id}/${
-          this.$route.params.group
-        }/${courseId}`
+      this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId}`
       );
     },
     backToDashboard() {
