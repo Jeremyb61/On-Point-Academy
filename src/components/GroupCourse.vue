@@ -253,8 +253,6 @@ export default {
       console.log("pre for");
       for (var i in this.groupChapters) { 
         for (var j in this.groupChapters[i].group_courses) {
-          //       console.log(this.groupChapters[i].group_courses[j], j);
-          //       console.log(this.groupChapters[i].group_courses[j].group_chaptersId);
           if (this.courseData.location === this.groupChapters[i].group_courses[j].location) {
             if (this.groupChapters[i].group_courses[parseInt(j) + 1] === undefined) {
               console.log("Chapter Completed - back to dashboard");

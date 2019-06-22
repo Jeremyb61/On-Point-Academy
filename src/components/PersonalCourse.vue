@@ -147,8 +147,8 @@ export default {
 
   async created() {
     try {
+
         window.scrollTo(0, 0);
-        console.log(this.$route.params)
       // Get course content
       var courseContentData = await Service.getPersonalCourseContent(
         this.$route.params
@@ -156,6 +156,7 @@ export default {
       this.courseData = courseContentData.data.course;
       this.videoId = courseContentData.data.course.video_url;
       this.questions = this.courseData.personal_course_questions;
+        console.log(this.courseData,'dsfsdsdds');
 
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
@@ -220,7 +221,7 @@ export default {
       }
       if (submitResponse.data.newAnswer) {
         this.submitVal = true;
-      }
+      };
     },
     async submitComplete() {
       this.submitAnswers();
@@ -229,6 +230,27 @@ export default {
         this.$route.params.courseId
       );
       this.complete = true;
+      var courseId = parseInt(this.$route.params.courseId);
+      console.log(courseId);
+      for(var i in this.personalChapters) {
+          for(var j in this.personalChapters[i].personal_courses) {
+              if(this.courseData.location === this.personalChapters[i].personal_courses[j].location) {
+                if(this.personalChapters[i].personal_courses[parseInt(j)+1] === undefined) {
+                    console.log("Chapter Completed - back to dashboard");
+                    this.$router.push(`/dashboard/${this.$route.params.id}`);
+                } else {
+                    var currentCourseLocation = this.courseData.location;
+                    var nextCourseLocation = this.personalChapters[i].personal_courses[parseInt(j) + 1].location;
+                    var nextLocArr = ("" + nextCourseLocation).split("");
+                    var currentLocArr = ("" + currentCourseLocation).split("");
+                    if (currentLocArr[0] === nextLocArr[0]) {
+                        console.log("Course Completed - next course"); 
+                        this.$router.push(`/dashboard/${this.$route.params.id}/${courseId+1}`);
+                    }
+                }
+              }
+          }
+      }
     },
     async deleteComplete() {
       var delComplete = await Service.deleteCourseCompletion(
