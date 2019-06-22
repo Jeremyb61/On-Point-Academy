@@ -19,6 +19,7 @@
     "multer": "^1.4.1",
     "mysql2": "^1.6.5",
     "sequelize": "^5.8.6",
+    "sequelize-cli": "^5.5.0",
     "vimeo": "^2.1.1",
     "vue": "^2.6.10",
     "vue-radial-progress": "^0.2.10",

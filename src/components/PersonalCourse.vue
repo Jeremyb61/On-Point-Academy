@@ -13,7 +13,7 @@
           </template>
           <v-list>
             <div v-for="(group, index) in groups" :key="index">
-              <v-list-tile @click="goToGroup(group.title)">
+              <v-list-tile @click="goToGroup(group.title,group.id)">
                 <v-list-tile-title>{{ group.title }}</v-list-tile-title>
               </v-list-tile>
             </div>
@@ -73,6 +73,8 @@
           </div>
           <v-alert v-model="submitVal" type="success" dismissible>Answers saved successfully</v-alert>
           <v-btn @click="submitAnswers">Save</v-btn>
+          <v-btn v-if="complete===false" :disabled="noContinue" @click="submitComplete">Complete</v-btn>
+          <v-btn v-else @click="deleteComplete">Uncomplete?</v-btn>
         </form>
       </div>
       <!-- End Course Content -->
@@ -89,13 +91,15 @@ export default {
       sideNavBar: false,
       panel: [false],
       personalChapters: [],
+      noContinue: true,
       groups: [],
       submitVal: false,
       usersFirstname: "",
       courseData: {},
       questions: [],
       answer: [],
-      videoId: ""
+      videoId: "",
+      complete: Boolean
     };
   },
   watch: {
@@ -117,13 +121,34 @@ export default {
               .personal_course_answers.answer_content
           );
         }
+        var checkComplete = await Service.checkPersonalComplete(to.params);
+        if (!checkComplete.data.complete[0]) {
+          this.complete = false;
+        } else {
+          this.complete = true;
+        }
+        window.scrollTo(0, 0);
+
       } catch (err) {
         console.log("ERROR ", err);
       }
-    }
+    },
+    answer: function() {
+      for (var i in this.answer) {
+        if (this.answer[i] === "") {
+          this.noContinue = true;
+        } else {
+          this.noContinue = false;
+        }
+      }
+    },
+
   },
+
   async created() {
     try {
+        window.scrollTo(0, 0);
+        console.log(this.$route.params)
       // Get course content
       var courseContentData = await Service.getPersonalCourseContent(
         this.$route.params
@@ -153,6 +178,17 @@ export default {
       // Get all groups that this user belongs to
       var groupData = await Service.getGroups(this.$route.params.id);
       this.groups = groupData.data.usersGroups.groups;
+
+      var checkComplete = await Service.checkPersonalComplete(
+        this.$route.params
+      );
+      console.log(checkComplete);
+      if (!checkComplete.data.complete[0]) {
+        this.complete = false;
+      } else {
+        this.complete = true;
+      }
+      console.log(this.complete);
     } catch (err) {
       console.log("ERROR ", err);
     }
@@ -165,10 +201,10 @@ export default {
       this.$router.push(`/dashboard/${this.$route.params.id}`);
     },
     signOut() {
-      this.$router.push(`/`);
+      this.$router.push(`/login`);
     },
-    goToGroup(groupTitle) {
-      this.$router.push(`/${this.$route.params.id}/${groupTitle}`);
+    goToGroup(groupTitle,groupId) {
+      this.$router.push(`/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`);
     },
     async submitAnswers() {
       var answerObj = {};
@@ -185,11 +221,21 @@ export default {
       if (submitResponse.data.newAnswer) {
         this.submitVal = true;
       }
+    },
+    async submitComplete() {
+      this.submitAnswers();
       var courseCompleteData = await Service.submitCourseCompletion(
         this.$route.params.id,
         this.$route.params.courseId
       );
-      console.log('here')
+      this.complete = true;
+    },
+    async deleteComplete() {
+      var delComplete = await Service.deleteCourseCompletion(
+        this.$route.params
+      );
+      this.complete = false;
+      console.log(delComplete);
     }
   }
 };

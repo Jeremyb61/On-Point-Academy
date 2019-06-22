@@ -13,13 +13,13 @@
           </template>
           <v-list>
             <div v-for="(group, index) in groups" :key="index">
-              <v-list-tile @click="switchGroup(group.title)">
+              <v-list-tile @click="switchGroup(group.title,group.id)">
                 <v-list-tile-title>{{ group.title }}</v-list-tile-title>
               </v-list-tile>
             </div>
           </v-list>
         </v-menu>
-        <v-btn flat>Sign out</v-btn>
+        <v-btn @click="signOut" flat>Sign out</v-btn>
       </v-toolbar-items>
     </v-toolbar>
     <!-- End Header -->
@@ -119,7 +119,7 @@ export default {
         this.questions = CourseContent.data.course.group_course_questions;
 
         var answerData = await Service.getSubmittedGroupAnswers(
-          this.$route.params
+          to.$route.params 
         );
         this.answer = [];
         for (var i in answerData.data.answers) {
@@ -207,9 +207,9 @@ export default {
     }
   },
   methods: {
-    async switchGroup(group) {
+    async switchGroup(groupTitle,groupId) {
       // Change route to another group dashboard
-      this.$router.push(`/${this.$route.params.id}/${group}`);
+      this.$router.push(`/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`);
 
       // Get Group Content
       var myGroup = await Service.getCurrentGroup(this.$route.params.group);
@@ -227,7 +227,7 @@ export default {
     },
     backToDashboard() {
       this.$router.push(
-        `/${this.$route.params.id}/${this.$route.params.group}`
+        `/group-dashboard/${this.$route.params.id}/${this.$route.params.groupId}/${this.$route.params.group}`
       );
     },
     async submitAnswers() {
@@ -250,9 +250,8 @@ export default {
       this.submitAnswers();
       await Service.submitGroupCourseCompletion(this.$route.params);
       var courseId = parseInt(this.$route.params.courseId);
-      //   this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${courseId+1}`)
       console.log("pre for");
-      for (var i in this.groupChapters) {
+      for (var i in this.groupChapters) { 
         for (var j in this.groupChapters[i].group_courses) {
           //       console.log(this.groupChapters[i].group_courses[j], j);
           //       console.log(this.groupChapters[i].group_courses[j].group_chaptersId);
@@ -269,16 +268,11 @@ export default {
               console.log("current", currentLocArr);
               console.log("next", nextLocArr);
               if (currentLocArr[0] === nextLocArr[0]) {
-                console.log("Course Completed - next course");
+                console.log("Course Completed - next course"); 
                 this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId + 1}`
                 );
               }
             }
-
-            //         console.log("this should go back to dashboard");
-
-            //       } else {   
-            //         console.log("this should go forward");
           }
         }
       }
@@ -289,6 +283,9 @@ export default {
       );
       this.complete = false;
       console.log(delComplete);
+    },
+    signOut() {
+        this.$router.push(`/login`);
     }
   }
 };

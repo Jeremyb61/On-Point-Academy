@@ -12,14 +12,14 @@
           </template>
           <v-list>
             <div v-for="(group, index) in groups" :key="index">
-              <v-list-tile @click="switchGroup(group.title)">
+              <v-list-tile @click="switchGroup(group.title,group.id)">
                 <v-list-tile-title>{{ group.title }}</v-list-tile-title>
               </v-list-tile>
             </div>
           </v-list>
         </v-menu>
         <v-btn flat @click="backToDashboard">Dashboard</v-btn>
-        <v-btn flat router to="/">Sign out</v-btn>
+        <v-btn flat @click="signOut">Sign out</v-btn>
       </v-toolbar-items>
     </v-toolbar>
     <!-- End Header -->
@@ -120,9 +120,16 @@ export default {
       );
       this.groups = groupData.data.usersGroups.groups;
 
-      var answerData = await Service.getGroupQuestionsAnswers(to.params.group);
+      var answerData = await Service.getGroupQuestionsAnswers(
+        this.$route.params
+      );
+      this.groupQuestions = answerData.data.questions;
       this.groupAnswers = answerData.data.answers;
-      // console.log(this.groupAnswers);
+
+      var groupCourseComplete = await Service.getGroupCourseCompletes(
+        this.$route.params
+      );
+      this.groupCompletes = groupCourseComplete.data.completes;
     }
   },
   async created() {
@@ -165,15 +172,23 @@ export default {
     }
   },
   methods: {
-    switchGroup(group) {
-      this.$router.push(`/${this.$route.params.id}/${group}`);
+    switchGroup(groupTitle, groupId) {
+      this.$router.push(
+        `/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`
+      );
     },
     goToGroupCourse(courseId) {
-      this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId}`
+      this.$router.push(
+        `/dashboard/${this.$route.params.id}/${this.$route.params.group}/${
+          this.$route.params.groupId
+        }/${courseId}`
       );
     },
     backToDashboard() {
       this.$router.push(`/dashboard/${this.$route.params.id}`);
+    },
+    signOut() {
+      this.$router.push(`/login`);
     }
   }
 };

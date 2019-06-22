@@ -13,6 +13,12 @@ const cloudinary = require('cloudinary');
 const credentials = require('../../src/modules/credentials.js');
 
 
+const hello = () => {
+
+}
+ 
+
+
 // Vimeo Middleware
 const Vimeo = require('vimeo').Vimeo;
 let client = new Vimeo(
@@ -254,6 +260,9 @@ PersonalCourse.init({
     },
     video_url: {
         type: Sequelize.TEXT
+    },
+    location: {
+        type: Sequelize.INTEGER
     }
 },
     { sequelize, modelName: 'personal_course' });
@@ -295,7 +304,7 @@ GroupCourse.init({
         type: Sequelize.TEXT
     },
     location: {
-        type: Sequelize.INTEGER 
+        type: Sequelize.INTEGER
     }
 },
     { sequelize, modelName: 'group_course' })
@@ -677,14 +686,14 @@ app.post('/api/submit-complete/:userId/:courseId', (req, res) => {
                     id: req.params.courseId
                 }
             })
-            .then((course) => {
-                course.setUsers(
-                    req.params.userId
-                )
-                res.json({
-                    course
+                .then((course) => {
+                    course.setUsers(
+                        req.params.userId
+                    )
+                    res.json({
+                        course
+                    })
                 })
-            })
         } else {
             res.json({
                 courseCompletes
@@ -971,7 +980,7 @@ app.get('/api/group/get-complete/:userId/:group', (req, res) => {
         GroupCourseComplete.findAll({
             where: {
                 [Op.and]: [
-                    { userId:req.params.userId },
+                    { userId: req.params.userId },
                     { groupId: group.id },
                 ]
             }
@@ -980,16 +989,16 @@ app.get('/api/group/get-complete/:userId/:group', (req, res) => {
                 completes
             })
         })
-        .catch((err) => {
-            console.log(err);
-            res.json({
-                err
+            .catch((err) => {
+                console.log(err);
+                res.json({
+                    err
+                })
             })
-        })
     })
 })
 
-app.get('/api/group/get-one-complete/:id/:group/:courseId', (req,res) => {
+app.get('/api/group/get-one-complete/:id/:group/:courseId', (req, res) => {
     Group.findOne({
         where: {
             title: req.params.group
@@ -1013,7 +1022,7 @@ app.get('/api/group/get-one-complete/:id/:group/:courseId', (req,res) => {
         })
     })
 })
-app.delete('/api/group/delete-complete/:id/:group/:courseId', (req,res) => {
+app.delete('/api/group/delete-complete/:id/:group/:courseId', (req, res) => {
     Group.findOne({
         where: {
             title: req.params.group
@@ -1028,7 +1037,7 @@ app.delete('/api/group/delete-complete/:id/:group/:courseId', (req,res) => {
         }).then((uncomplete) => {
             console.log("DSGFSDFSDFDSFDS")
             uncomplete.destroy({
-                force:true
+                force: true
             });
             res.json({
                 uncomplete
@@ -1040,6 +1049,41 @@ app.delete('/api/group/delete-complete/:id/:group/:courseId', (req,res) => {
             })
         })
     })
+})
+app.delete('/api/user/delete-complete/:id/:courseId', (req, res) => {
+    sequelize.query('DELETE FROM personal_course_completes WHERE userId = ? AND personalCourseId = ?',
+        {
+            replacements: [req.params.id, req.params.courseId],
+            type: sequelize.QueryTypes.DELETE
+        }).then((complete) => {
+            console.log(complete);
+            res.json({
+                complete
+            })
+        }).catch((err) => {
+            console.log(err);
+            res.json({
+                err
+            })
+        })
+})
+
+app.get('/api/user/get-personal-complete/:id/:courseId',(req,res) => {
+    sequelize.query('SELECT * FROM personal_course_completes WHERE userId = ? AND personalCourseId = ?',
+        {
+            replacements: [req.params.id, req.params.courseId],
+            type: sequelize.QueryTypes.SELECT
+        }).then((complete) => {
+            console.log(complete);
+            res.json({  
+                complete
+            })
+        }).catch((err) => {
+            console.log(err);
+            res.json({
+                err
+            })
+        })
 })
 
 // Port 

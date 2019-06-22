@@ -78,9 +78,14 @@ class Service {
     static checkForComplete(params) {
         return axios.get(`${url}/api/group/get-one-complete/${params.id}/${params.group}/${params.courseId}`);
     }
+    static checkPersonalComplete(params) {
+        return axios.get(`${url}/api/user/get-personal-complete/${params.id}/${params.courseId}`);
+    }
     static deleteGroupCourseCompletion(params) {
-        console.log("EFDSFDSFDSFDS")
         return axios.delete(`${url}/api/group/delete-complete/${params.id}/${params.group}/${params.courseId}`);
+    }
+    static deleteCourseCompletion(params) {
+        return axios.delete(`${url}/api/user/delete-complete/${params.id}/${params.courseId}`);
     }
  
 }
