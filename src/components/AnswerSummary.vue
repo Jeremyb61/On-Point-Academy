@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- Dashboard Header -->
-    <v-toolbar dark color="info" app>
+    <v-toolbar dark color="grey darken-3" app>
       <v-toolbar-side-icon @click="sideNavBar = !sideNavBar"></v-toolbar-side-icon>
-      <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
+      <img style="width:192px" src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559515269/oplogo.png">
       <v-spacer></v-spacer>
       <v-toolbar-items>
         <v-btn flat @click="backToDashboard">Back</v-btn>
@@ -14,7 +14,7 @@
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
-    <v-navigation-drawer width="220" v-model="sideNavBar" app class="accent">
+    <v-navigation-drawer width="220" v-model="sideNavBar" app class="grey darken-3" temporary>
       <v-expansion-panel v-model="panel" expand>
         <v-expansion-panel-content v-for="item in personalChapters" :key="item.id">
           <template v-slot:header>
@@ -32,16 +32,22 @@
       </v-expansion-panel>
     </v-navigation-drawer>
     <!-- End Side Nav Bar -->
-    <div class="container">
-      <h1>Answer Summary</h1>
-      <div v-for="(answer,index) in answerSummary" :key="index">
-        <h3>Question:</h3>
-        <p>{{ answer.question_content }}</p>
-        <h3>Answer:</h3>
-        <p>{{ answer.answer_content }}</p>
-        <hr>
-      </div>
+
+    <v-sheet elevation="8" class="mx-auto" min-height="250" width="80%" style="border-radius:10px; margin-top: 25px; margin-bottom:20px">
+    <div class="container" >
+        <h1 style="text-align:center; font-weight:300">Your {{this.chapterData.title}} Summary</h1>
+        <hr style="display:block; margin-top:5px">
+        <div v-for="(answer,index) in answerSummary" :key="index">
+           
+            <h3 style="font-weight:300"><em>{{ answer.question_content }}</em></h3>
+            
+            <p>{{ answer.answer_content }}</p>
+            <hr>
+            
+        </div>
+
     </div>
+    </v-sheet>
   </div>
 </template>
 
@@ -56,7 +62,8 @@ export default {
       user: {},
       personalChapters: [],
       groups: [],
-      answerSummary: []
+      answerSummary: [],
+      chapterData: {}
     };
   },
   async created() {
@@ -75,8 +82,19 @@ export default {
         var answers = await Service.getAnswers(this.$route.params);
         this.answerSummary = answers.data.answers;
 
-        console.log(this.$route.params);
+
+      for(var i in this.personalChapters) {
+          if (this.personalChapters[i].id == this.$route.params.courseId){
+            this.chapterData = this.personalChapters[i]
+          }
       }
+
+      //Get all questions/Answers user has submitted for this course
+      var answers = await Service.getAnswers(this.$route.params);
+      this.answerSummary = answers.data.answers
+      
+      console.log(this.$route.params);
+
     } catch (err) {
       console.log(err);
     }

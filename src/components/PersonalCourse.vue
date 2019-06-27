@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- Dashboard Header -->
-    <v-toolbar dark color="warning" app>
+    <v-toolbar dark color="black" app>
       <v-toolbar-side-icon @click="sideNavBar = !sideNavBar"></v-toolbar-side-icon>
-      <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
+       <img style="width:192px" src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559515269/oplogo.png">
       <v-spacer></v-spacer>
       <v-toolbar-items>
         <v-btn flat @click="backToDashboard">Dashboard</v-btn>
@@ -25,7 +25,7 @@
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
-    <v-navigation-drawer width="230" v-model="sideNavBar" app class="accent">
+    <v-navigation-drawer width="230" v-model="sideNavBar" app class="grey darken-3" temporary>
       <v-expansion-panel v-model="panel" expand>
         <v-expansion-panel-content v-for="item in personalChapters" :key="item.id">
           <template v-slot:header>
@@ -45,8 +45,11 @@
     <!-- End Side Nav Bar -->
 
     <!-- Course Content -->
+    <v-sheet elevation="8" class="mx-auto" min-height="250" width="85vw" style="border-radius:10px; margin-top: 20px; margin-bottom:20px">
     <div class="container">
-      <h1 class="courseTitle">{{ courseData.title }}</h1>
+      
+      <h1 style= "font-weight:300; text-align:center; margin-right:40px" class="courseTitle">{{ courseData.title }}</h1>
+      <hr style="display:block">
       <div class="videoWrapper">
         <iframe
           v-if="videoId !== ''"
@@ -59,10 +62,14 @@
           allowfullscreen
         ></iframe>
       </div>
-      <div class="contentWrapper">
-        <p>{{ courseData.content }}</p>
-
-        <form>
+        <h1 style= "font-weight:300; text-align:center; margin-right:40px; padding-bottom: 5px" class="courseTitle">Summary</h1>
+        <p style= "text-align:center; padding 10px">{{ courseData.content }}</p>
+      </div>
+      </v-sheet>
+      <v-sheet elevation="8" class="mx-auto" min-height="250" width="85vw" style="border-radius:10px; margin-bottom:20px">
+      <h1 style= "font-weight:300; text-align:center; margin-right:40px; margin-top:10px; padding-top: 10px" class="courseTitle">Action Steps</h1>
+      <hr style="display:block; width:93%; justify-content: center; margin-left:3%; margin-top:5px">
+        <form style="padding:30px">
           <div v-for="(question,index) in questions" :key="question.id">
             <v-textarea
               v-model="answer[index]"
@@ -74,9 +81,10 @@
           <v-alert v-model="submitVal" type="success" dismissible>Answers saved successfully</v-alert>
           <v-btn @click="submitAnswers">Save</v-btn>
           <v-btn v-if="complete===false" :disabled="noContinue" @click="submitComplete">Complete</v-btn>
-          <v-btn v-else @click="deleteComplete">Uncomplete?</v-btn>
+          <v-btn v-else @click="deleteComplete">Uncomplete</v-btn>
         </form>
-      </div>
+      
+      </v-sheet>
       <!-- End Course Content -->
     </div>
   </div>

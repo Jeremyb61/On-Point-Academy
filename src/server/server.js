@@ -84,8 +84,8 @@ cloudinary.config({
 //Image upload end
 
 // DB Config
-const sequelize = new Sequelize('onPointAccademy', 'root', 'root', {
-    host: 'localhost',
+const sequelize = new Sequelize('onpointaccademy', 'salbonico@onpointaccademy', 'Steveandjer22', {
+    host: 'onpointaccademy.mysql.database.azure.com',
     dialect: 'mysql'
 });
 const Model = Sequelize.Model;
