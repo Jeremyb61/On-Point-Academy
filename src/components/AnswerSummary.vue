@@ -23,8 +23,8 @@
           <div v-for="course in item.personal_courses" :key="course.id">
             <v-card @click="goToCourse(course.id)">
               <v-card-text class="grey lighten-3">
-                  {{ course.title }}
-                  <v-icon v-if="course.users[0]"  color="success" right>done</v-icon>
+                {{ course.title }}
+                <v-icon v-if="course.users[0]" color="success" right>done</v-icon>
               </v-card-text>
             </v-card>
           </div>
@@ -32,6 +32,7 @@
       </v-expansion-panel>
     </v-navigation-drawer>
     <!-- End Side Nav Bar -->
+
     <v-sheet elevation="8" class="mx-auto" min-height="250" width="80%" style="border-radius:10px; margin-top: 25px; margin-bottom:20px">
     <div class="container" >
         <h1 style="text-align:center; font-weight:300">Your {{this.chapterData.title}} Summary</h1>
@@ -44,6 +45,7 @@
             <hr>
             
         </div>
+
     </div>
     </v-sheet>
   </div>
@@ -69,10 +71,17 @@ export default {
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
       this.user = userData.data.user;
+      if (userData.data.error) {
+        this.$router.push(`/login`);
+      } else {
+        // Get all personal chapters and courses
+        var personalChaptersData = await Service.getPersonalChapters();
+        this.personalChapters = personalChaptersData.data.data;
 
-      // Get all personal chapters and courses
-      var personalChaptersData = await Service.getPersonalChapters();
-      this.personalChapters = personalChaptersData.data.data;
+        //Get all questions/Answers user has submitted for this course
+        var answers = await Service.getAnswers(this.$route.params);
+        this.answerSummary = answers.data.answers;
+
 
       for(var i in this.personalChapters) {
           if (this.personalChapters[i].id == this.$route.params.courseId){
@@ -85,6 +94,7 @@ export default {
       this.answerSummary = answers.data.answers
       
       console.log(this.$route.params);
+
     } catch (err) {
       console.log(err);
     }
@@ -94,16 +104,15 @@ export default {
       this.$router.push(`/dashboard/${this.$route.params.id}/${courseId}`);
     },
     backToDashboard() {
-        this.$router.push(`/dashboard/${this.$route.params.id}`)
+      this.$router.push(`/dashboard/${this.$route.params.id}`);
     }
   }
 };
 </script>
 <style scoped>
-  
-    hr {
-        margin-bottom:25px;
-    }
+hr {
+  margin-bottom: 25px;
+}
 </style>
 
 

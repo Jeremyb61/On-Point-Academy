@@ -41,6 +41,12 @@ export default {
       file: null
     };
   },
+  async created() {
+       var userData = await Service.getUserProfile(this.$route.params.id);
+      if (userData.data.error) {
+        this.$router.push(`/login`);
+      }
+  },
   methods: {
     pickFile() {
       this.$refs.file.click();
@@ -56,7 +62,6 @@ export default {
       formData.append("image", this.file);
       
       try {
-       
 
         var uploadData = Service.uploadNewImage(
           this.$route.params.id,

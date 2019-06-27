@@ -37,6 +37,20 @@ export default {
       error: ""
     };
   },
+  watch: {
+    async $route(to, from) {
+      this.$$router.push('/login')
+    },
+    answer: function() {
+      for (var i in this.answer) {
+        if (this.answer[i] === "") {
+          this.noContinue = true;
+        } else {
+          this.noContinue = false;
+        }
+      }
+    }
+  },
   methods: {
     async login() {
       if (this.userName === "" || this.password === "") {

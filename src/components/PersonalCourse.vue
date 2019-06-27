@@ -136,7 +136,6 @@ export default {
           this.complete = true;
         }
         window.scrollTo(0, 0);
-
       } catch (err) {
         console.log("ERROR ", err);
       }
@@ -149,55 +148,58 @@ export default {
           this.noContinue = false;
         }
       }
-    },
-
+    }
   },
 
   async created() {
     try {
-
-        window.scrollTo(0, 0);
+      window.scrollTo(0, 0);
       // Get course content
-      var courseContentData = await Service.getPersonalCourseContent(
-        this.$route.params
-      );
-      this.courseData = courseContentData.data.course;
-      this.videoId = courseContentData.data.course.video_url;
-      this.questions = this.courseData.personal_course_questions;
-        console.log(this.courseData,'dsfsdsdds');
-
-      // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
-      this.usersFirstname = userData.data.user.first_name;
-
-      // Get all personal chapters and courses
-      var personalChaptersData = await Service.getPersonalChapters();
-      this.personalChapters = personalChaptersData.data.data;
-
-      var answerData = await Service.getSubmittedAnswers(this.$route.params);
-      if (answerData.data.answers.personal_course_questions[0]) {
-        for (var i in answerData.data.answers.personal_course_questions) {
-          this.answer.push(
-            answerData.data.answers.personal_course_questions[i].users[0]
-              .personal_course_answers.answer_content
-          );
-        }
-      }
-
-      // Get all groups that this user belongs to
-      var groupData = await Service.getGroups(this.$route.params.id);
-      this.groups = groupData.data.usersGroups.groups;
-
-      var checkComplete = await Service.checkPersonalComplete(
-        this.$route.params
-      );
-      console.log(checkComplete);
-      if (!checkComplete.data.complete[0]) {
-        this.complete = false;
+      if (userData.data.error) {
+        this.$router.push(`/login`);
       } else {
-        this.complete = true;
+        var courseContentData = await Service.getPersonalCourseContent(
+          this.$route.params
+        );
+        this.courseData = courseContentData.data.course;
+        this.videoId = courseContentData.data.course.video_url;
+        this.questions = this.courseData.personal_course_questions;
+        console.log(this.courseData, "dsfsdsdds");
+
+        // Get User Data
+        var userData = await Service.getUserProfile(this.$route.params.id);
+        this.usersFirstname = userData.data.user.first_name;
+
+        // Get all personal chapters and courses
+        var personalChaptersData = await Service.getPersonalChapters();
+        this.personalChapters = personalChaptersData.data.data;
+
+        var answerData = await Service.getSubmittedAnswers(this.$route.params);
+        if (answerData.data.answers.personal_course_questions[0]) {
+          for (var i in answerData.data.answers.personal_course_questions) {
+            this.answer.push(
+              answerData.data.answers.personal_course_questions[i].users[0]
+                .personal_course_answers.answer_content
+            );
+          }
+        }
+
+        // Get all groups that this user belongs to
+        var groupData = await Service.getGroups(this.$route.params.id);
+        this.groups = groupData.data.usersGroups.groups;
+
+        var checkComplete = await Service.checkPersonalComplete(
+          this.$route.params
+        );
+        console.log(checkComplete);
+        if (!checkComplete.data.complete[0]) {
+          this.complete = false;
+        } else {
+          this.complete = true;
+        }
+        console.log(this.complete);
       }
-      console.log(this.complete);
     } catch (err) {
       console.log("ERROR ", err);
     }
@@ -212,8 +214,10 @@ export default {
     signOut() {
       this.$router.push(`/login`);
     },
-    goToGroup(groupTitle,groupId) {
-      this.$router.push(`/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`);
+    goToGroup(groupTitle, groupId) {
+      this.$router.push(
+        `/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`
+      );
     },
     async submitAnswers() {
       var answerObj = {};
@@ -229,10 +233,10 @@ export default {
       }
       if (submitResponse.data.newAnswer) {
         this.submitVal = true;
-      };
+      }
     },
     async submitComplete() {
-      this.submitAnswers();
+      await this.submitAnswers();
       var courseCompleteData = await Service.submitCourseCompletion(
         this.$route.params.id,
         this.$route.params.courseId
@@ -240,24 +244,33 @@ export default {
       this.complete = true;
       var courseId = parseInt(this.$route.params.courseId);
       console.log(courseId);
-      for(var i in this.personalChapters) {
-          for(var j in this.personalChapters[i].personal_courses) {
-              if(this.courseData.location === this.personalChapters[i].personal_courses[j].location) {
-                if(this.personalChapters[i].personal_courses[parseInt(j)+1] === undefined) {
-                    console.log("Chapter Completed - back to dashboard");
-                    this.$router.push(`/dashboard/${this.$route.params.id}`);
-                } else {
-                    var currentCourseLocation = this.courseData.location;
-                    var nextCourseLocation = this.personalChapters[i].personal_courses[parseInt(j) + 1].location;
-                    var nextLocArr = ("" + nextCourseLocation).split("");
-                    var currentLocArr = ("" + currentCourseLocation).split("");
-                    if (currentLocArr[0] === nextLocArr[0]) {
-                        console.log("Course Completed - next course"); 
-                        this.$router.push(`/dashboard/${this.$route.params.id}/${courseId+1}`);
-                    }
-                }
+      for (var i in this.personalChapters) {
+        for (var j in this.personalChapters[i].personal_courses) {
+          if (
+            this.courseData.location ===
+            this.personalChapters[i].personal_courses[j].location
+          ) {
+            if (
+              this.personalChapters[i].personal_courses[parseInt(j) + 1] ===
+              undefined
+            ) {
+              console.log("Chapter Completed - back to dashboard");
+              this.$router.push(`/dashboard/${this.$route.params.id}`);
+            } else {
+              var currentCourseLocation = this.courseData.location;
+              var nextCourseLocation = this.personalChapters[i]
+                .personal_courses[parseInt(j) + 1].location;
+              var nextLocArr = ("" + nextCourseLocation).split("");
+              var currentLocArr = ("" + currentCourseLocation).split("");
+              if (currentLocArr[0] === nextLocArr[0]) {
+                console.log("Course Completed - next course");
+                this.$router.push(
+                  `/dashboard/${this.$route.params.id}/${courseId + 1}`
+                );
               }
+            }
           }
+        }
       }
     },
     async deleteComplete() {

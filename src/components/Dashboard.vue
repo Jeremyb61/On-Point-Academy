@@ -2,13 +2,15 @@
   <div>
     <!-- Dashboard Header -->
     <v-toolbar dark color="secondary" app>
+
       <v-toolbar-side-icon class="hidden-xs-only" @click="sideNavBar = !sideNavBar"></v-toolbar-side-icon>
       <img style="width:192px" src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559515269/oplogo.png">
+
       <v-spacer></v-spacer>
       <v-toolbar-items>
-        <v-menu>
+        <v-menu v-if="userHasGroups === true">
           <template #activator="{ on: menu }">
-            <v-btn flat v-on="{ ...menu }" class="hidden-xs-only">Your Groups</v-btn>
+            <v-btn flat v-on="{ ...menu }">Your Groups</v-btn>
           </template>
           <v-list>
             <div v-for="(group, index) in groups" :key="index">
@@ -20,7 +22,7 @@
         </v-menu>
         <v-menu>
           <template #activator="{ on: menu }">
-            <v-btn flat v-on="{ ...menu }" class="hidden-xs-only">Settings</v-btn>
+            <v-btn flat v-on="{ ...menu }">Settings</v-btn>
           </template>
           <v-list>
             <div>
@@ -30,16 +32,18 @@
             </div>
           </v-list>
         </v-menu>
-        <v-btn flat @click="signOut" class="hidden-xs-only">Sign out</v-btn>
+        <v-btn flat @click="signOut">Sign out</v-btn>
       </v-toolbar-items>
-      <v-toolbar-side-icon class="hidden-sm-and-up" @click="mobilePanel = !mobilePanel"></v-toolbar-side-icon>
+      <!-- <v-toolbar-side-icon class="hidden-sm-and-up" @click="mobilePanel = !mobilePanel"></v-toolbar-side-icon> -->
     </v-toolbar>
 
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
+
     <v-navigation-drawer width="230" v-model="sideNavBar" app class="grey darken-3" disable-resize-watcher temporary>
-      <v-expansion-panel v-model="panel" expand>
+      <v-expansion-panel v-model="panel" expand v-if="personalAccess===true">
+
         <v-expansion-panel-content v-for="item in personalChapters" :key="item.id">
           <template v-slot:header>
             <div>{{ item.title }}</div>
@@ -49,6 +53,31 @@
               <v-card-text class="grey lighten-3">
                 {{ course.title }}
                 <div style="display:inline-block" v-if="course.users[0]">
+                  <div v-for="(complete,index) in course.users" :key="index">
+                    <v-icon v-if="complete.id == userParam" color="success" right>done</v-icon>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+      <!-- Group Side Nav Bar -->
+      <v-expansion-panel v-else v-model="panel" expand >
+          <v-card flat min-width=100% min-height="65px">
+              <v-card-text class="display-1">
+                  {{ groupName }}
+              </v-card-text>
+          </v-card>
+        <v-expansion-panel-content v-for="item in gChapters" :key="item.id">
+          <template v-slot:header>
+            <div>{{ item.title }}</div>
+          </template>
+          <div v-for="course in item.group_courses" :key="course.id">
+            <v-card @click="goToGroupCourse(course.id)">
+              <v-card-text class="grey lighten-3">
+                {{ course.title }}
+                <div style="display:inline-block">
                   <div v-for="(complete,index) in course.users" :key="index">
                     <v-icon v-if="complete.id == userParam" color="success" right>done</v-icon>
                   </div>
@@ -126,7 +155,7 @@
     <h1 style="font-weight:300; text-align:center; padding-top:10px"> Your Personal Pillars Progress</h1> 
     
     <v-container>
-      <v-layout row wrap justify-space-between>
+      <v-layout row wrap justify-space-between v-if="personalAccess === true">
         <v-flex v-for="(chapter,index) in personalChapters" :key="index" xs6 sm3 md3 lg1 xl1>
           <h2 style="font-weight:300; text-align:center; width: 150px"> {{chapter.title}}</h2> 
           <div @click="goToAnswerPage(chapter.id)">
@@ -163,14 +192,19 @@ export default {
   name: "Dashboard",
   data() {
     return {
+        personalAccess: true,
       userParam: this.$route.params.id,
       sideNavBar: false,
       mobilePanel: false,
       panel: [false],
       user: {},
       personalChapters: [],
+      userHasGroups:false,
       groups: [],
       image: "",
+      groupName: '',
+      gChapters:[],
+      groupId:null,
       // Progress bar state
       progress: [],
       overallProgress: "",
@@ -199,26 +233,48 @@ export default {
       ]
     };
   },
+    watch: {
+    async $route(to, from) {
+        this.$router.push('/login');
+    }
+  },
   async created() {
     try {
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
+    //   console.log('SDFDSFSD',userData);
       if (userData.data.error) {
         this.$router.push(`/login`);
       } else {
         this.user = userData.data.user;
         this.image = userData.data.user.image;
+        // console.log(this.user);
+
+        if(this.user.personal_access === false) {
+            this.personalAccess = false;
+            var groupChapters = await Service.getOneGroupChapters(this.$route.params);
+            console.log(groupChapters);
+            this.groupName = groupChapters.data.user.groups[0].title;
+            this.groupId = groupChapters.data.user.groups[0].id;
+            this.gChapters = groupChapters.data.chapter;
+
+        }
 
         // Get all groups that this user belongs to
         var groupData = await Service.getGroups(this.$route.params.id);
-        this.groups = groupData.data.usersGroups.groups;
+        if(groupData.data.usersGroups) {
+            if(groupData.data.usersGroups.groups.length > 0) {
+                this.groups = groupData.data.usersGroups.groups;
+                this.userHasGroups = true;
+            }
+        } 
 
         // Get all personal chapters and courses
         var personalChaptersData = await Service.getPersonalChapters();
         this.personalChapters = personalChaptersData.data.data;
-        console.log(this.personalChapters);
+        // console.log(this.personalChapters);
 
-
+        
         // Get all personal course completes
         var userTotal = 0;
         var courseTotal = 0;
@@ -243,16 +299,12 @@ export default {
           // Getting value for progress bars
             var numerator = parseInt(completes);
             this.value.push(numerator * (100/localCourseTotal));
-            console.log('numerator', numerator);
-            console.log('this.value', this.value);
+            // console.log('numerator', numerator);
+            // console.log('this.value', this.value);
             courseTotal +=localCourseTotal
             this.overallProgress = `${userTotal}/${courseTotal}`;
-
-
             
         }
-
-
         // console.log(this.overallProgress);
         var split = this.overallProgress.split("/");
         // console.log('split: ',split);
@@ -282,6 +334,11 @@ export default {
       this.$router.push(
         `/dashboard/${this.$route.params.id}/summary/${courseId}`
       );
+    },
+    goToGroupCourse(courseId) {
+        this.$router.push(
+            `/dashboard/${this.$route.params.id}/${this.groupName}/${this.groupId}/${courseId}`      
+        );
     },
     signOut() {
       Service.signOutUser();
@@ -326,54 +383,8 @@ export default {
 }
 .v-progress-circular {
   border-radius: 51%;
-  /* margin-left: 50%; */
-}
-/* @media only screen and (max-width: 1650px) {
-  .container {
-    margin-left: 15%;
-  }
-}
-@media only screen and (max-width: 1550px) {
-  .container {
-    margin-left: 12%;
-  }
-}
-@media only screen and (max-width: 1400px) {
-  .container {
-    margin-left: 8%;
-  }
 }
 
-@media only screen and (max-width: 1265px) {
- .radial-container {
-    margin-left: 36%;
-  } 
- }
-@media only screen and (max-width: 1105px) {
-  .radial-container {
-    margin-left: 34.5%;
-  }
-}
-@media only screen and (max-width: 700px) {
-  .radial-container {
-    margin-left: 30%;
-  }
-}
-@media only screen and (max-width: 600px) {
-  .radial-container {
-    margin-left: 27%;
-  }
-}
-@media only screen and (max-width: 500px) {
-  .radial-container {
-    margin-left: 22%;
-  }
-}
-@media only screen and (max-width: 415px) {
-  .radial-container {
-    margin-left: 15%;
-  } 
-} */
 </style>
 
 
