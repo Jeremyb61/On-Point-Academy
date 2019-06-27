@@ -3,7 +3,7 @@
     <!-- Dashboard Header -->
     <v-toolbar dark color="secondary" app>
       <v-toolbar-side-icon class="hidden-xs-only" @click="sideNavBar = !sideNavBar"></v-toolbar-side-icon>
-      <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
+      <img style="width:192px" src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559515269/oplogo.png">
       <v-spacer></v-spacer>
       <v-toolbar-items>
         <v-menu>
@@ -38,7 +38,7 @@
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
-    <v-navigation-drawer width="230" v-model="sideNavBar" app class="accent" disable-resize-watcher>
+    <v-navigation-drawer width="230" v-model="sideNavBar" app class="grey darken-3" disable-resize-watcher temporary>
       <v-expansion-panel v-model="panel" expand>
         <v-expansion-panel-content v-for="item in personalChapters" :key="item.id">
           <template v-slot:header>
@@ -83,31 +83,52 @@
 
     <!-- Profile Pic -->
     <v-container class="my-5">
-      <v-layout justify-center>
-        <v-flex xs6 sm4 md4 lg2 xl2>
-          <div>
+       <v-layout row wrap justify-center align-center>
+        <v-flex xs12 sm12 md3 lg3 xl3>
+        <v-sheet elevation="8" class="mx-auto" min-height="200" width= "250px" style="border-radius:10px">
+          <div style="padding:5px">
             <radial-progress-bar
               :diameter="240"
               :completed-steps="totalComplete"
               :total-steps="totalSteps"
               :strokeWidth="15"
               startColor="green"
-              stopColor="red"
-              :animateSpeed="600"
+              stopColor="white"
+              :animateSpeed="900"
             >
               <div class="main-icon-div">
                 <img class="profile-pic" :src="image">
               </div>
             </radial-progress-bar>
           </div>
+         </v-sheet>
         </v-flex>
+
+         <v-flex  xs12 sm12 md12 lg9 xl9>
+           <v-sheet elevation="8" class="mx-auto" min-height="250"  style="border-radius:10px;">
+          <div style="padding:5px; margin:15px">
+          <h1 style="margin-bottom:-10px; font-weight:300; text-align:center; padding-top:10px; font-size:42px"> Steve Albonico</h1> 
+          <h2 style="font-weight:300; text-align:left; padding-top:10px"> <b>Company:</b> Albonico LLC</h2> 
+          <h2 style="font-weight:300; text-align:left; padding-top:10px"> <b>Position:</b> Owner and CEO</h2> 
+          <h2 style="font-weight:300; text-align:left; padding-top:10px"> <b>Favorite Color:</b> Purple</h2> 
+          <h1 style="font-weight:400; text-align:center; padding-top:10px"> Total Progress: {{this.overallProgress}}</h1>  
+          </div>
+           </v-sheet>
+        </v-flex>
+
+
       </v-layout>
     </v-container>
-
-    <!-- Courses  -->
+   
+   <!-- Courses  -->
+   
+    <v-sheet elevation="8" class="mx-auto" min-height="250" width="90%" style="border-radius:10px; margin-top:-25px; margin-bottom:20px">
+    <h1 style="font-weight:300; text-align:center; padding-top:10px"> Your Personal Pillars Progress</h1> 
+    
     <v-container>
       <v-layout row wrap justify-space-between>
         <v-flex v-for="(chapter,index) in personalChapters" :key="index" xs6 sm3 md3 lg1 xl1>
+          <h2 style="font-weight:300; text-align:center; width: 150px"> {{chapter.title}}</h2> 
           <div @click="goToAnswerPage(chapter.id)">
 
             <radial-progress-bar
@@ -115,17 +136,18 @@
               :completed-steps="value[index]"
               :total-steps="totalSteps"
               :strokeWidth="15"
-              :startColor="colors[index]"
-              :stopColor="colors[index]"
-              :animateSpeed="600"
+              :startColor="green"
+              :stopColor="white"
+              :animateSpeed="900"
             >
               <img class="icon" :src="icons[index]" alt>
             </radial-progress-bar>
-            {{ progress[index] }}
+            <h2 style="font-weight:300; text-align:center; width: 150px">{{progress[index]}}</h2> 
           </div>
         </v-flex>
       </v-layout>
     </v-container>
+    </v-sheet>
     <!-- End DashBoard Content  -->
   </div>
 </template>

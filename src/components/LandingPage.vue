@@ -5,7 +5,7 @@
       <v-toolbar-title>
         <img src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559515269/oplogo.png">
       </v-toolbar-title>
-      <v-spacer></v-spacer>
+      <v-spacer></v-spacer> 
 
       <v-toolbar-items>
         <v-btn router to="/login" flat>Sign in</v-btn>
@@ -15,8 +15,11 @@
       <v-carousel-item v-for="(item,i) in items" :key="i" :src="item.src">
         <v-container fill-height>
           <v-layout align-center>
-            <v-flex text-xs-center>
-              <h1 class="display-2 white--text">{{ item.textOne }}!</h1>
+           <v-flex text-xs-left>
+              <div style="background-color: rgba(105,105,105,0.5);border-radius: 15px; padding-left:15px; padding-top:10px">
+              <h1 style="font-weight:300; color:white; font-size:60px">{{ item.textOne }}</h1>
+              <h3 style="padding-left:2px; padding-top: -5px; padding-bottom:13px; font-weight:300" class="display-1 white--text">{{ item.textTwo }}</h3>
+              </div>
             </v-flex>
           </v-layout>
         </v-container>
@@ -85,6 +88,7 @@
     <!-- Coach Bios -->
     <div class="bio">
       <!-- Kathleen -->
+      <div style="background-color:#E0E0E0; width:100vw; padding-top:45px; margin-top: -20px;">
       <div class="coach">
         <img
           class="bio-img"
@@ -113,9 +117,11 @@
             <span style="color:#6E2000;">MASTER STATUS:</span> Executives in Transition, Executive Presence, Multi-Intelligence Approach to Development and Problem Solving, Subtle Body Assessment and Practice Plans
           </p>
         </div>
+        </div>
       </div>
       <!-- Saara -->
-      <div class="coach" style="margin-top:30px;">
+      
+      <div class="coach" style="margin-top:30px">
         <div class="coach-desc">
           <p class="display-1 coach-name">Saara Robles</p>
           <p class="title">Executive Coach and Leadership Consultant</p>
@@ -145,6 +151,7 @@
           src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559943938/lpage-bio/saara-opa.webp"
         >
       </div>
+      
     </div>
     <v-footer dark height="auto">
       <v-card class="flex" flat tile>
@@ -165,20 +172,24 @@ export default {
     return {
       items: [
         {
-          src: "https://cdn.vuetifyjs.com/images/carousel/squirrel.jpg",
-          textOne: "Text for image 1"
+          src: "https://res.cloudinary.com/ducvha2fk/video/upload/v1560455964/highfive.gif",
+          textOne: "Leadership Through Coaching",
+          textTwo: "Lead your team via coaching and unlock their true growth potential."
         },
         {
-          src: "https://cdn.vuetifyjs.com/images/carousel/sky.jpg",
-          textOne: "Text for image 2"
+          src: "https://res.cloudinary.com/ducvha2fk/image/upload/v1560461562/group_meeting.jpg",
+          textOne: "Culture Change 101",
+          textTwo: "Change is difficult, but for a trained leader, its an opportunity for greatness."
         },
         {
-          src: "https://cdn.vuetifyjs.com/images/carousel/bird.jpg",
-          textOne: "Text for image 3"
+          src: "https://res.cloudinary.com/ducvha2fk/image/upload/v1560461869/group.jpg",
+          textOne: "A Path All Your Own",
+          textTwo: "We identify exactly the kind of leader you are and personalize your journey."
         },
         {
-          src: "https://cdn.vuetifyjs.com/images/carousel/planet.jpg",
-          textOne: "Text for image 4"
+          src: "https://res.cloudinary.com/ducvha2fk/image/upload/v1560462134/biz_group.jpg",
+          textOne: "Build Your Roadmap",
+          textTwo: "When you graduate, you leave with a roadmap built exactly for you, by you."
         }
       ],
       custLogos: [
@@ -241,7 +252,7 @@ img {
   width: 100%;
 }
 .bio {
-  width: 90%;
+
   margin: auto;
 }
 .objectives {
@@ -265,7 +276,7 @@ hr {
 .coach {
   min-height: 300px;
   width: 100%;
-  margin-bottom: 30px;
+  
   padding-left: 10%;
 }
 .coach .coach-desc {
@@ -283,6 +294,8 @@ hr {
 }
 .bio-img {
   width: 550px;
+  padding-top:105px;
+  margin-bottom: -5px;
 }
 @media only screen and (max-width: 1210px) {
   .coach {

@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- Dashboard Header -->
-    <v-toolbar dark color="accent" app>
+    <v-toolbar dark color="black" app>
       <v-toolbar-side-icon @click="sideNavBar = !sideNavBar"></v-toolbar-side-icon>
-      <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
+      <img style="width:192px" src="https://res.cloudinary.com/ducvha2fk/image/upload/v1559515269/oplogo.png">
       <v-spacer></v-spacer>
       <v-toolbar-items>
         <v-menu>
@@ -25,7 +25,7 @@
     <!-- End Header -->
 
     <!-- Side Nav Bar  -->
-    <v-navigation-drawer width="220" v-model="sideNavBar" app class="accent">
+    <v-navigation-drawer width="220" v-model="sideNavBar" app class="grey darken-3" temporary>
       <v-expansion-panel v-model="panel" expand>
         <v-expansion-panel-content v-for="item in groupChapters" :key="item.id">
           <template v-slot:header>
@@ -52,12 +52,13 @@
             <v-sheet elevation="8" class="mx-auto" min-height="500" width="100%">
               <div style="text-align:center;">
                 <img :src="currentGroup.icon">
+                <h1 style="font-weight:300">The {{currentGroup.title}} Group Change Plan</h1>
               </div>
               <div class="answers-div" v-for="chap in groupQuestions" :key="chap.id">
                 <v-list two-line>
                   <template>
                     <v-subheader>
-                      <h2>{{ chap.title }}</h2>
+                      <h2 style="font-weight:300">{{ chap.title }}</h2>
                     </v-subheader>
                     <v-divider></v-divider>
 
