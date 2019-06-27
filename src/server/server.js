@@ -12,13 +12,6 @@ const multer = require('multer')
 const cloudinary = require('cloudinary');
 const credentials = require('../../src/modules/credentials.js');
 
-
-const hello = () => {
-
-}
- 
-
-
 // Vimeo Middleware
 const Vimeo = require('vimeo').Vimeo;
 let client = new Vimeo(
@@ -222,7 +215,13 @@ User.init({
         type: Sequelize.STRING,
         defaultValue: 'default_pub_id'
 
-    }
+    },
+    personal_access: {
+        type: Sequelize.BOOLEAN
+    },
+    group_access: {
+        type: Sequelize.BOOLEAN
+    },
 }, { sequelize, modelName: 'users' });
 
 User.addHook('afterValidate', (user, options) => {
@@ -488,11 +487,14 @@ app.get('/api/user/sign-out', (req, res) => {
 })
 
 // Get User for Profile
-app.get('/api/user/:id', (req, res) => {
+app.get('/api/user/:id', redirectLogin, (req, res) => {
     User.findOne({
         where: {
             id: req.params.id
-        }
+        },
+        include: [{
+            model: Group
+        }]
     }).then((user) => {
         if (!user) {
             console.log("NO USER");
@@ -584,6 +586,9 @@ app.get('/api/group/:group', (req, res) => {
 // Get list of other groups that user is in
 app.get('/api/othergroups/:id/:group', (req, res) => {
     User.findOne({
+        where: {
+            id: req.params.id,
+        },
         include: [{
             model: Group,
             where: {
@@ -591,13 +596,12 @@ app.get('/api/othergroups/:id/:group', (req, res) => {
                     [Op.ne]: req.params.group
                 }
             }
-        }],
-        where: {
-            id: req.params.id,
-        }
+        }]
     }).then((usersGroups) => {
         if (!usersGroups) {
-            console.log("NO DAT");
+            res.json({
+                status: false
+            })
         } else {
             console.log("GROUPS!", usersGroups);
             res.json({
@@ -841,14 +845,14 @@ app.post('/api/group-answers/:id/:group/:courseId', (req, res) => {
                         newAnswerSub,
 
                     })
-                        .catch((err) => {
-                            console.log(err);
-                            res.json({
-                                err
-                            })
-                        })
 
                 })
+                    .catch((err) => {
+                        console.log(err);
+                        res.json({
+                            err
+                        })
+                    })
             } else {
                 answer.update({
                     answer_content: req.body.answer
@@ -1068,14 +1072,14 @@ app.delete('/api/user/delete-complete/:id/:courseId', (req, res) => {
         })
 })
 
-app.get('/api/user/get-personal-complete/:id/:courseId',(req,res) => {
+app.get('/api/user/get-personal-complete/:id/:courseId', (req, res) => {
     sequelize.query('SELECT * FROM personal_course_completes WHERE userId = ? AND personalCourseId = ?',
         {
             replacements: [req.params.id, req.params.courseId],
             type: sequelize.QueryTypes.SELECT
         }).then((complete) => {
             console.log(complete);
-            res.json({  
+            res.json({
                 complete
             })
         }).catch((err) => {
@@ -1084,6 +1088,29 @@ app.get('/api/user/get-personal-complete/:id/:courseId',(req,res) => {
                 err
             })
         })
+})
+
+app.get('/api/user/group-chapters/:id', (req, res) => {
+    User.findOne({
+        where: {
+            id: req.params.id
+        },
+        include: [{
+            model: Group
+        }]
+    }).then((user) => {
+        GroupChapter.findAll({
+            include: [{
+                model: GroupCourse
+            }]
+        })
+            .then((chapter) => {
+                res.json({
+                    user,
+                    chapter
+                })
+            })
+    })
 })
 
 // Port 

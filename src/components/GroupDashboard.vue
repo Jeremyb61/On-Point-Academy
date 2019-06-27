@@ -6,7 +6,7 @@
       <v-toolbar-title class="text-uppercase white--text">On Point Academy</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items>
-        <v-menu>
+        <v-menu v-if="otherGroupStatus === true">
           <template #activator="{ on: menu }">
             <v-btn flat v-on="{ ...menu }">Switch Groups</v-btn>
           </template>
@@ -105,7 +105,9 @@ export default {
       groupChapters: [],
       usersFirstname: "",
       currentGroup: {},
-      groupCompletes: []
+      groupCompletes: [],
+      denied: true,
+      otherGroupStatus: true
     };
   },
   watch: {
@@ -118,8 +120,12 @@ export default {
         this.$route.params.id,
         to.params.group
       );
-      this.groups = groupData.data.usersGroups.groups;
-
+      console.log(groupData);
+      if (groupData.data.status === false) {
+        this.otherGroupStatus = false;
+      } else {
+        this.groups = groupData.data.usersGroups.groups;
+      }
       var answerData = await Service.getGroupQuestionsAnswers(
         this.$route.params
       );
@@ -137,36 +143,62 @@ export default {
       console.log(this.$route.params);
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
-      this.usersFirstname = userData.data.user.first_name;
 
-      // Get Current Group title
-      var myGroup = await Service.getCurrentGroup(this.$route.params.group);
-      this.currentGroup = myGroup.data.group;
+      if (userData.data.error) {
+        this.$router.push("/login");
+      } else {
+        console.log(userData);
+        if (userData.data.user.groups.length === 0) {
+          this.$router.push(`/dashboard/${this.$route.params.id}/`);
+        } else {
+          console.log("else");
+          for (var i in userData.data.user.groups) {
+            console.log(userData.data.user.groups[i].id);
+            console.log(this.$route.params.groupId);
+            if (userData.data.user.groups[i].id == this.$route.params.groupId) {
+              this.denied = false;
+            }
+            console.log("this.denied ", this.denied);
+          }
+        }
+        if (this.denied == true) {
+          this.$router.push(`/dashboard/${this.$route.params.id}/`);
+        }
 
-      // Get all others groups that user belongs to
-      var groupData = await Service.getOtherGroups(
-        this.$route.params.id,
-        this.$route.params.group
-      );
-      this.groups = groupData.data.usersGroups.groups;
+        // Get Current Group title
+        var myGroup = await Service.getCurrentGroup(this.$route.params.group);
+        this.currentGroup = myGroup.data.group;
 
-      //Get all group course completes
-      var groupCourseComplete = await Service.getGroupCourseCompletes(
-        this.$route.params
-      );
-      this.groupCompletes = groupCourseComplete.data.completes;
-      console.log(this.groupCompletes);
+        // Get all others groups that user belongs to
+        var groupData = await Service.getOtherGroups(
+          this.$route.params.id,
+          this.$route.params.group
+        );
+        console.log(groupData);
+        if (groupData.data.status === false) {
+          this.otherGroupStatus = false;
+        } else {
+          this.groups = groupData.data.usersGroups.groups;
+        }
+        console.log('other',this.otherGroupStatus)
+        //Get all group course completes
+        var groupCourseComplete = await Service.getGroupCourseCompletes(
+          this.$route.params
+        );
+        this.groupCompletes = groupCourseComplete.data.completes;
+        console.log(this.groupCompletes);
 
-      // Get all Group chapters
-      var groupChaptersData = await Service.getGroupChapters();
-      this.groupChapters = groupChaptersData.data.data;
+        // Get all Group chapters
+        var groupChaptersData = await Service.getGroupChapters();
+        this.groupChapters = groupChaptersData.data.data;
 
-      var answerData = await Service.getGroupQuestionsAnswers(
-        this.$route.params
-      );
-      this.groupQuestions = answerData.data.questions;
-      this.groupAnswers = answerData.data.answers;
-      //   console.log(this.groupAnswers);
+        var answerData = await Service.getGroupQuestionsAnswers(
+          this.$route.params
+        );
+        this.groupQuestions = answerData.data.questions;
+        this.groupAnswers = answerData.data.answers;
+        //   console.log(this.groupAnswers);
+      }
     } catch (err) {
       console.log("ERROR", err);
     }

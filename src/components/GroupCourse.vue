@@ -7,7 +7,7 @@
       <v-spacer></v-spacer>
       <v-toolbar-items>
         <v-btn flat @click="backToDashboard">Dashboard</v-btn>
-        <v-menu>
+        <v-menu v-if="otherGroupStatus === true">
           <template #activator="{ on: menu }">
             <v-btn flat v-on="{ ...menu }">Switch Groups</v-btn>
           </template>
@@ -104,7 +104,9 @@ export default {
       answer: [],
       submitVal: false,
       answerStatus: [],
-      groupCompletes: []
+      groupCompletes: [],
+      denied: true,
+      otherGroupStatus: true
     };
   },
   watch: {
@@ -119,7 +121,7 @@ export default {
         this.questions = CourseContent.data.course.group_course_questions;
 
         var answerData = await Service.getSubmittedGroupAnswers(
-          to.$route.params 
+          this.$route.params
         );
         this.answer = [];
         for (var i in answerData.data.answers) {
@@ -156,60 +158,84 @@ export default {
       // Get User Data
       console.log(this.$route.params);
       var userData = await Service.getUserProfile(this.$route.params.id);
-      this.usersFirstname = userData.data.user.first_name;
-
-      // Get all other groups that user belongs to
-      var groupData = await Service.getOtherGroups(
-        this.$route.params.id,
-        this.$route.params.group
-      );
-      this.groups = groupData.data.usersGroups.groups;
-
-      // Get Current Group title
-      var myGroup = await Service.getCurrentGroup(this.$route.params.group);
-      this.groupTitle = myGroup.data.group.title;
-
-      // Get all Group chapters
-      var groupChaptersData = await Service.getGroupChapters();
-      this.groupChapters = groupChaptersData.data.data;
-      console.log("groupChapters", this.groupChapters);
-
-      var CourseContent = await Service.getGroupCourseContent(
-        this.$route.params
-      );
-      this.courseData = CourseContent.data.course;
-      this.questions = CourseContent.data.course.group_course_questions;
-      console.log(this.courseData);
-
-      var answerData = await Service.getSubmittedGroupAnswers(
-        this.$route.params
-      );
-      for (var i in answerData.data.answers) {
-        this.answer.push(answerData.data.answers[i].answer_content);
-      }
-
-      var checkComplete = await Service.checkForComplete(this.$route.params);
-      if (!checkComplete.data.complete) {
-        this.complete = false;
+      if (userData.data.error) {
+        this.$router.push(`/login`);
       } else {
-        this.complete = true;
-      }
-      console.log(this.complete);
+        if (userData.data.user.groups.length === 0) {
+          this.$router.push(`/dashboard/${this.$route.params.id}/`);
+        } else {
+          for (var i in userData.data.user.groups) {
+            console.log(userData.data.user.groups[i]);
+            if (userData.data.user.groups[i].id == this.$route.params.groupId) {
+              this.denied = false;
+              console.log("denied: ", this.denied);
+            }
+          }
+        }
+        if (this.denied == true) {
+          this.$router.push(`/dashboard/${this.$route.params.id}/`);
+        }
+        // Get all other groups that user belongs to
+        var groupData = await Service.getOtherGroups(
+          this.$route.params.id,
+          this.$route.params.group
+        );
+        console.log(groupData);
+        if (groupData.data.status === false) {
+          this.otherGroupStatus = false;
+        } else {
+          this.groups = groupData.data.usersGroups.groups;
+        }
 
-      //Get all group course completes
-      var groupCourseComplete = await Service.getGroupCourseCompletes(
-        this.$route.params
-      );
-      this.groupCompletes = groupCourseComplete.data.completes;
-      console.log(this.groupCompletes);
+        // Get Current Group title
+        var myGroup = await Service.getCurrentGroup(this.$route.params.group);
+        this.groupTitle = myGroup.data.group.title;
+
+        // Get all Group chapters
+        var groupChaptersData = await Service.getGroupChapters();
+        this.groupChapters = groupChaptersData.data.data;
+        console.log("groupChapters", this.groupChapters);
+
+        var CourseContent = await Service.getGroupCourseContent(
+          this.$route.params
+        );
+        this.courseData = CourseContent.data.course;
+        this.questions = CourseContent.data.course.group_course_questions;
+        console.log(this.courseData);
+
+        var answerData = await Service.getSubmittedGroupAnswers(
+          this.$route.params
+        );
+        for (var i in answerData.data.answers) {
+          this.answer.push(answerData.data.answers[i].answer_content);
+        }
+        console.log("answerData", answerData);
+
+        var checkComplete = await Service.checkForComplete(this.$route.params);
+        if (!checkComplete.data.complete) {
+          this.complete = false;
+        } else {
+          this.complete = true;
+        }
+        console.log(this.complete);
+
+        //Get all group course completes
+        var groupCourseComplete = await Service.getGroupCourseCompletes(
+          this.$route.params
+        );
+        this.groupCompletes = groupCourseComplete.data.completes;
+        console.log(this.groupCompletes);
+      }
     } catch (err) {
       console.log("ERROR ", err);
     }
   },
   methods: {
-    async switchGroup(groupTitle,groupId) {
+    async switchGroup(groupTitle, groupId) {
       // Change route to another group dashboard
-      this.$router.push(`/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`);
+      this.$router.push(
+        `/group-dashboard/${this.$route.params.id}/${groupId}/${groupTitle}`
+      );
 
       // Get Group Content
       var myGroup = await Service.getCurrentGroup(this.$route.params.group);
@@ -223,20 +249,28 @@ export default {
       this.groups = groupData.data.usersGroups.groups;
     },
     goToGroupCourse(courseId) {
-      this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId}`);
+      this.$router.push(
+        `/dashboard/${this.$route.params.id}/${this.$route.params.group}/${
+          this.$route.params.groupId
+        }/${courseId}`
+      );
     },
     backToDashboard() {
       this.$router.push(
-        `/group-dashboard/${this.$route.params.id}/${this.$route.params.groupId}/${this.$route.params.group}`
+        `/group-dashboard/${this.$route.params.id}/${
+          this.$route.params.groupId
+        }/${this.$route.params.group}`
       );
     },
     async submitAnswers() {
       var answerObj = {};
+      console.log("question ", this.questions);
       for (var i in this.questions) {
         answerObj = {
           questionId: this.questions[i].id,
           answer: this.answer[i]
         };
+        console.log("answerObj", answerObj);
         var submitResponse = await Service.submitGroupAnswers(
           answerObj,
           this.$route.params
@@ -247,27 +281,40 @@ export default {
       console.log("Submit Response", submitResponse);
     },
     async submitComplete() {
-      this.submitAnswers();
+      await this.submitAnswers();
       await Service.submitGroupCourseCompletion(this.$route.params);
       var courseId = parseInt(this.$route.params.courseId);
       console.log("pre for");
-      for (var i in this.groupChapters) { 
+      for (var i in this.groupChapters) {
         for (var j in this.groupChapters[i].group_courses) {
-          if (this.courseData.location === this.groupChapters[i].group_courses[j].location) {
-            if (this.groupChapters[i].group_courses[parseInt(j) + 1] === undefined) {
+          if (
+            this.courseData.location ===
+            this.groupChapters[i].group_courses[j].location
+          ) {
+            if (
+              this.groupChapters[i].group_courses[parseInt(j) + 1] === undefined
+            ) {
               console.log("Chapter Completed - back to dashboard");
-              this.$router.push(`/group-dashboard/${this.$route.params.id}/1/${this.$route.params.group}`)
-                // /group-dashboard/:id/:groupId/:group
+              this.$router.push(
+                `/group-dashboard/${this.$route.params.id}/1/${
+                  this.$route.params.group
+                }`
+              );
             } else {
               var currentCourseLocation = this.courseData.location;
-              var nextCourseLocation = this.groupChapters[i].group_courses[parseInt(j) + 1].location;
+              var nextCourseLocation = this.groupChapters[i].group_courses[
+                parseInt(j) + 1
+              ].location;
               var nextLocArr = ("" + nextCourseLocation).split("");
               var currentLocArr = ("" + currentCourseLocation).split("");
               console.log("current", currentLocArr);
               console.log("next", nextLocArr);
               if (currentLocArr[0] === nextLocArr[0]) {
-                console.log("Course Completed - next course"); 
-                this.$router.push(`/dashboard/${this.$route.params.id}/${this.$route.params.group}/${this.$route.params.groupId}/${courseId + 1}`
+                console.log("Course Completed - next course");
+                this.$router.push(
+                  `/dashboard/${this.$route.params.id}/${
+                    this.$route.params.group
+                  }/${this.$route.params.groupId}/${courseId + 1}`
                 );
               }
             }
@@ -283,7 +330,7 @@ export default {
       console.log(delComplete);
     },
     signOut() {
-        this.$router.push(`/login`);
+      this.$router.push(`/login`);
     }
   }
 };

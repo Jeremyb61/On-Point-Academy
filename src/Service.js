@@ -28,6 +28,7 @@ class Service {
         return axios.get(`${url}/api/groups/${id}`);
     }
     static getOtherGroups (id, group) {
+        console.log("DSFSDFSDDFDSSDFS")
         return axios.get(`${url}/api/othergroups/${id}/${group}`)
     }
     static getCurrentGroup(group) {
@@ -86,6 +87,9 @@ class Service {
     }
     static deleteCourseCompletion(params) {
         return axios.delete(`${url}/api/user/delete-complete/${params.id}/${params.courseId}`);
+    }
+    static getOneGroupChapters(params) {
+        return axios.get(`${url}/api/user/group-chapters/${params.id}`);
     }
  
 }
