@@ -84,8 +84,8 @@ cloudinary.config({
 //Image upload end
 
 // DB Config
-const sequelize = new Sequelize('onpointaccademy', 'salbonico@onpointaccademy', 'Steveandjer22', {
-    host: 'onpointaccademy.mysql.database.azure.com',
+const sequelize = new Sequelize('onpointaccademy', 'root', 'root', {
+    host: 'localhost',
     dialect: 'mysql'
 });
 const Model = Sequelize.Model;
@@ -1099,9 +1099,13 @@ app.get('/api/user/group-chapters/:id', (req, res) => {
             model: Group
         }]
     }).then((user) => {
+        console.log('user = ',user.groups[0].id);
         GroupChapter.findAll({
             include: [{
-                model: GroupCourse
+                model: GroupCourse,
+                include:[{
+                    model: GroupCourseComplete,
+                }]
             }]
         })
             .then((chapter) => {

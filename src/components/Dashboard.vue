@@ -78,8 +78,8 @@
               <v-card-text class="grey lighten-3">
                 {{ course.title }}
                 <div style="display:inline-block">
-                  <div v-for="(complete,index) in course.users" :key="index">
-                    <v-icon v-if="complete.id == userParam" color="success" right>done</v-icon>
+                  <div v-for="(complete,index) in course.group_course_completes" :key="index">
+                    <v-icon v-if="complete.userId == userParam && complete.groupId == groupId && complete.groupCourseId == course.id" color="success" right>done</v-icon>
                   </div>
                 </div>
               </v-card-text>
@@ -253,11 +253,11 @@ export default {
         if(this.user.personal_access === false) {
             this.personalAccess = false;
             var groupChapters = await Service.getOneGroupChapters(this.$route.params);
-            console.log(groupChapters);
             this.groupName = groupChapters.data.user.groups[0].title;
             this.groupId = groupChapters.data.user.groups[0].id;
             this.gChapters = groupChapters.data.chapter;
 
+            console.log(this.gChapters);
         }
 
         // Get all groups that this user belongs to

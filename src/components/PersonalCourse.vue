@@ -35,7 +35,11 @@
             <v-card @click="goToCourse(course.id)">
               <v-card-text class="grey lighten-3">
                 {{ course.title }}
-                <v-icon v-if="course.users[0]" color="success" right>done</v-icon>
+                <div style="display:inline-block" v-if="course.users[0]">
+                  <div v-for="(complete,index) in course.users" :key="index">
+                    <v-icon v-if="complete.id == userParam" color="success" right>done</v-icon>
+                  </div>
+                </div>
               </v-card-text>
             </v-card>
           </div>
@@ -96,6 +100,7 @@ export default {
   name: "PersonalCourse",
   data() {
     return {
+      userParam: this.$route.params.id,
       sideNavBar: false,
       panel: [false],
       personalChapters: [],
@@ -174,6 +179,7 @@ export default {
         // Get all personal chapters and courses
         var personalChaptersData = await Service.getPersonalChapters();
         this.personalChapters = personalChaptersData.data.data;
+        console.log(this.personalChapters);
 
         var answerData = await Service.getSubmittedAnswers(this.$route.params);
         if (answerData.data.answers.personal_course_questions[0]) {

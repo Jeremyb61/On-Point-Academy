@@ -94,7 +94,7 @@ export default {
       this.answerSummary = answers.data.answers
       
       console.log(this.$route.params);
-
+      }
     } catch (err) {
       console.log(err);
     }
