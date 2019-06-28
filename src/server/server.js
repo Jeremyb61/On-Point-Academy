@@ -348,6 +348,12 @@ GroupCourseComplete.init({
 },
     { sequelize, modelName: 'group_course_completes' })
 
+class PersonalCourseComplete extends Model { }
+PersonalCourseComplete.init({
+   
+},
+    { sequelize, modelName: 'personal_course_completes' })
+
 
 //////////////////////// -- One - to - Many -- ///////////////////////////////////////////////
 
@@ -675,30 +681,31 @@ app.post('/api/answers/:userId', (req, res) => {
 
 })
 app.post('/api/submit-complete/:userId/:courseId', (req, res) => {
-    sequelize.query('SELECT * FROM personal_course_completes WHERE userId = ? And personalCourseId = ? LIMIT 1',
-        {
-            replacements:
-                [
-                    req.params.userId,
-                    req.params.courseId
-                ], type: sequelize.QueryTypes.SELECT
-        }
-    ).then((courseCompletes) => {
-        if (!courseCompletes[0]) {
-            PersonalCourse.findOne({
-                where: {
-                    id: req.params.courseId
-                }
+    PersonalCourse.findOne({
+        where: {
+            id: req.params.courseId
+        },
+        include: [{
+            model: User,
+            where: {
+                id: req.params.userId
+            }
+        }]
+    })
+    .then((courseCompletes) => {
+        console.log(courseCompletes);
+        if (courseCompletes === null) {
+            PersonalCourseComplete.create({
+                userId: req.params.userId,
+                personalCourseId: req.params.courseId
             })
                 .then((course) => {
-                    course.setUsers(
-                        req.params.userId
-                    )
                     res.json({
                         course
                     })
                 })
         } else {
+            console.log("HERE!!!!!!!!!!!LLL")
             res.json({
                 courseCompletes
             })
@@ -1099,7 +1106,6 @@ app.get('/api/user/group-chapters/:id', (req, res) => {
             model: Group
         }]
     }).then((user) => {
-        console.log('user = ',user.groups[0].id);
         GroupChapter.findAll({
             include: [{
                 model: GroupCourse,

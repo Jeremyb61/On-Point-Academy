@@ -91,7 +91,6 @@
       </v-sheet>
       <!-- End Course Content -->
     </div>
-  </div>
 </template>
 
 <script>

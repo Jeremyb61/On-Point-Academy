@@ -24,7 +24,11 @@
             <v-card @click="goToCourse(course.id)">
               <v-card-text class="grey lighten-3">
                 {{ course.title }}
-                <v-icon v-if="course.users[0]" color="success" right>done</v-icon>
+                <div style="display:inline-block" v-if="course.users[0]">
+                  <div v-for="(complete,index) in course.users" :key="index">
+                    <v-icon v-if="complete.id == userParam" color="success" right>done</v-icon>
+                  </div>
+                </div>
               </v-card-text>
             </v-card>
           </div>
@@ -57,6 +61,7 @@ export default {
   name: "Dashboard",
   data() {
     return {
+      userParam: this.$route.params.id,
       sideNavBar: false,
       panel: [false],
       user: {},
@@ -68,6 +73,7 @@ export default {
   },
   async created() {
     try {
+        console.log(this.$route.params)
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
       this.user = userData.data.user;
@@ -77,7 +83,7 @@ export default {
         // Get all personal chapters and courses
         var personalChaptersData = await Service.getPersonalChapters();
         this.personalChapters = personalChaptersData.data.data;
-
+        console.log(this.personalChapters);
         //Get all questions/Answers user has submitted for this course
         var answers = await Service.getAnswers(this.$route.params);
         this.answerSummary = answers.data.answers;
