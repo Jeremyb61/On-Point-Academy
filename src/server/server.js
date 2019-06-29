@@ -350,7 +350,7 @@ GroupCourseComplete.init({
 
 class PersonalCourseComplete extends Model { }
 PersonalCourseComplete.init({
-   
+
 },
     { sequelize, modelName: 'personal_course_completes' })
 
@@ -515,14 +515,15 @@ app.get('/api/user/:id', redirectLogin, (req, res) => {
 //Get Personal Chapters
 app.get('/api/chapters', (req, res) => {
     PersonalChapter.findAll({
-        include: [
-            {
-                model: PersonalCourse,
-                include: [
-                    { model: User }
-                ]
-            }
-        ]
+        include: [{
+            model: PersonalCourse,
+            include: [{
+                model: User,
+            }],
+        }],
+        order:[
+            [PersonalCourse, 'location', 'ASC']
+        ],
     }).then((data) => {
         if (!data[0]) {
             console.log("NO DATA/api/groups/chapters")
@@ -563,12 +564,16 @@ app.get('/api/chapters/groups', (req, res) => {
     GroupChapter.findAll({
         include: [{
             model: GroupCourse,
-        }]
+        }],
+        order: [
+            [GroupCourse, 'location', 'ASC']
+        ]
     })
         .then((data) => {
             if (!data[0]) {
                 console.log("NO DATA")
             } else {
+
                 res.json({
                     data
                 })
@@ -692,25 +697,25 @@ app.post('/api/submit-complete/:userId/:courseId', (req, res) => {
             }
         }]
     })
-    .then((courseCompletes) => {
-        console.log(courseCompletes);
-        if (courseCompletes === null) {
-            PersonalCourseComplete.create({
-                userId: req.params.userId,
-                personalCourseId: req.params.courseId
-            })
-                .then((course) => {
-                    res.json({
-                        course
-                    })
+        .then((courseCompletes) => {
+            console.log(courseCompletes);
+            if (courseCompletes === null) {
+                PersonalCourseComplete.create({
+                    userId: req.params.userId,
+                    personalCourseId: req.params.courseId
                 })
-        } else {
-            console.log("HERE!!!!!!!!!!!LLL")
-            res.json({
-                courseCompletes
-            })
-        }
-    })
+                    .then((course) => {
+                        res.json({
+                            course
+                        })
+                    })
+            } else {
+                console.log("HERE!!!!!!!!!!!LLL")
+                res.json({
+                    courseCompletes
+                })
+            }
+        })
 })
 app.put('/api/image/:id', upload.single('image'), (req, res) => {
     User.findOne({
@@ -1109,7 +1114,7 @@ app.get('/api/user/group-chapters/:id', (req, res) => {
         GroupChapter.findAll({
             include: [{
                 model: GroupCourse,
-                include:[{
+                include: [{
                     model: GroupCourseComplete,
                 }]
             }]

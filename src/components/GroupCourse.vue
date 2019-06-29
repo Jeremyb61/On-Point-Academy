@@ -203,7 +203,7 @@ export default {
 
         // Get all Group chapters
         var groupChaptersData = await Service.getGroupChapters();
-        this.groupChapters = groupChaptersData.data.data;
+        this.groupChapters = groupChaptersData.data.data;   
         console.log("groupChapters", this.groupChapters);
 
         var CourseContent = await Service.getGroupCourseContent(
