@@ -4,6 +4,7 @@ node_modules
 
 /src/modules/credentials.js
 /src/modules/cloudinary.js
+/src/database/dbconnection.js
 
 
 # local env files
