@@ -24,6 +24,8 @@
               @change="onFilePicked"
             >
             <v-btn @click="onUpload">Upload</v-btn>
+            <v-alert :value="uploadSuccess" color="blue lighten-1" outline dismissible>Image Uploaded SuccessFully</v-alert>
+
           </v-flex>
         </v-container>
       </v-content>
@@ -38,7 +40,8 @@ export default {
   data() {
     return {
       imageName: "",
-      file: null
+      file: null,
+      uploadSuccess:false
     };
   },
   async created() {
@@ -67,7 +70,11 @@ export default {
           this.$route.params.id,
           formData
         );
-        this.$router.push(`/dashboard/${this.$route.params.id}`);
+       
+        this.uploadSuccess = true;
+        console.log(this.uploadSuccess)
+
+
       } catch (err) {
         console.log(err);
       }

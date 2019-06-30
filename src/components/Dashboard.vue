@@ -165,8 +165,8 @@
               :completed-steps="value[index]"
               :total-steps="totalSteps"
               :strokeWidth="15"
-              :startColor="green"
-              :stopColor="white"
+              startColor="green"
+              stopColor="white"
               :animateSpeed="900"
             >
               <img class="icon" :src="icons[index]" alt>
@@ -222,15 +222,7 @@ export default {
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzOT4uekAcWnhWFJ691CSzeyaw81YVHWYXTes30KLNGqqeGag_Xw",
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3Qx5GWpzEnfTx7YQWX4rEjENki6qHoic0uyknmY5W20ph81cYJw"
       ],
-      colors: [
-        "#7DF683",
-        "#7DF6F4",
-        "yellow",
-        "green",
-        "blue",
-        "indigo",
-        "violet"
-      ]
+    
     };
   },
     watch: {
@@ -248,7 +240,7 @@ export default {
       } else {
         this.user = userData.data.user;
         this.image = userData.data.user.image;
-        // console.log(this.user);
+        console.log(this.user);
 
         if(this.user.personal_access === false) {
             this.personalAccess = false;

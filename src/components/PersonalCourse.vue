@@ -117,6 +117,7 @@ export default {
   watch: {
     async $route(to, from) {
       try {
+        this.submitVal = false;
         // Get course content
         var courseContentData = await Service.getPersonalCourseContent(
           to.params
@@ -146,10 +147,10 @@ export default {
     },
     answer: function() {
       for (var i in this.answer) {
-        if (this.answer[i] === "") {
-          this.noContinue = true;
-        } else {
+        if (this.answer[i] != "") {
           this.noContinue = false;
+        } else {
+          this.noContinue = true;
         }
       }
     }

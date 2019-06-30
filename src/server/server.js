@@ -7,18 +7,25 @@ const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const Sequelize = require('sequelize');
 var session = require('express-session');
-const path = require('path');
-const multer = require('multer')
 const cloudinary = require('cloudinary');
-const credentials = require('../../src/modules/credentials.js');
 
-// Vimeo Middleware
-const Vimeo = require('vimeo').Vimeo;
-let client = new Vimeo(
-    "b411a1d05735161f6718803310de6df46fb9276d",
-    "jyKGnpSQ9Nc70GbWIQIwoXH2xiZLCTILenWO5Uaii8uKcjekr4FPJV7r/ulQpdq46qAwch0kJ2k3P/Wa3tTCBJ36DqPQs39vzFdcm9eb1qS5UOnIIbOUHQe4fzqYmKmj",
-    "ccacce370109c328e26739098d92f14e"
-);
+// Modules
+const SESS_SECRET = require('../../src/modules/credentials.js');
+const CLOUD_CONFIG = require('../../src/modules/cloudinary');
+const upload = require('../../src/modules/multer')
+
+// DB Config
+const sequelize = require('../database/dbconnection')
+sequelize
+    .authenticate()
+    .then(() => {
+        console.log('Connection has been established successfully.');
+    })
+    .catch(err => {
+        console.error('Unable to connect to the database:', err);
+    });
+
+
 
 app.use(bodyParser.json());
 
@@ -29,7 +36,7 @@ app.use(cors({
 
 // Session Config
 const sessConfig = {
-    secret: credentials,
+    secret: SESS_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -44,61 +51,18 @@ if (app.get('env') === 'production') {
 
 app.use(session(sessConfig));
 
+//END session config
 
-//Image upload start
-
-
-// Set Storage Engine
-const storage = multer.diskStorage({
-    filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
-    }
-})
-
-// Init Upload
-const upload = multer({
-    storage: storage,
-    fileFilter: function (req, file, cb) {
-        checkFileType(file, cb);
-    }
-})
-
-// Validate Image Type
-function checkFileType(file, cb) {
-    const filetypes = /jpeg|jpg|png|gif/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-        return cb(null, true);
-    } else {
-        cb(new Error("Images only!"));
-    }
-}
-
+// cloudinary config
 cloudinary.config({
-    cloud_name: 'ducvha2fk',
-    api_key: '581228639846129',
-    api_secret: '9hGgdjABHxUUAgPnZm7PkFMTbFw'
+    cloud_name: CLOUD_CONFIG.CLOUD_NAME,
+    api_key: CLOUD_CONFIG.API_KEY,
+    api_secret: CLOUD_CONFIG.API_SECRET
 });
-//Image upload end
-
-// DB Config
-const sequelize = new Sequelize('onpointaccademy', 'root', 'root', {
-    host: 'localhost',
-    dialect: 'mysql'
-});
-const Model = Sequelize.Model;
-sequelize
-    .authenticate()
-    .then(() => {
-        console.log('Connection has been established successfully.');
-    })
-    .catch(err => {
-        console.error('Unable to connect to the database:', err);
-    });
 
 // DB Models
+const Model = Sequelize.Model;
+
 class User extends Model { }
 User.init({
     user_name: {
@@ -386,11 +350,6 @@ PersonalCourse.belongsToMany(User, { through: 'personal_course_completes' })
 User.belongsToMany(Group, { through: 'users_in_groups' })
 Group.belongsToMany(User, { through: 'users_in_groups' })
 
-// Tracks the GROUP COURSES that a USER completes
-// Group.belongsToMany(GroupCourse, { through: 'group_course_completes' })
-// GroupCourse.belongsToMany(Group, { through: 'group_course_completes' })
-// User.hasMany(GroupCourseComplete, { foreignKey: 'userId' })
-
 // Tracks the group CHAPTERS that a GROUP completes
 Group.belongsToMany(GroupChapter, { through: 'group_chapter_completes' })
 GroupChapter.belongsToMany(Group, { through: 'group_chapter_completes' })
@@ -399,9 +358,6 @@ GroupChapter.belongsToMany(Group, { through: 'group_chapter_completes' })
 User.belongsToMany(PersonalCourseQuestion, { through: 'personal_course_answers' })
 PersonalCourseQuestion.belongsToMany(User, { through: 'personal_course_answers' })
 
-// // Tracks which answer belongs to which user/group course question
-// Group.belongsToMany(GroupCourseQuestion, { through: 'group_course_answers' })
-// GroupCourseQuestion.belongsToMany(Group, { through: 'group_course_answers' })
 
 sequelize.sync({
     // force: true 
@@ -722,24 +678,44 @@ app.put('/api/image/:id', upload.single('image'), (req, res) => {
         where: {
             id: req.params.id
         }
-    }).then((user) => {
-        cloudinary.v2.uploader.destroy(user.image_id, (err, res) => {
-            if (err) {
-                console.log("ERRRRRORRRRRR", err);
-            } else {
-                cloudinary.v2.uploader.upload(req.file.path, (err, result) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                    user.update({
-                        image: result.secure_url,
-                        image_id: result.public_id,
-                    }).then((updatedUser) => {
-                        console.log(updatedUser);
+    }).then((user)=> {
+        if(user.image_id != 'blank-profile-picture') {
+            cloudinary.v2.uploader.destroy(user.image_id, (err, response) => {
+                if (err) {
+                    console.log("ERRRRRORRRRRR", err);
+                } else {
+                    cloudinary.v2.uploader.upload(req.file.path, (err, result) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                        user.update({
+                            image: result.secure_url,
+                            image_id: result.public_id,
+                        }).then((updatedUser) => {
+                            res.json({
+                                updatedUser
+                            })
+                        })
+                    })
+                }
+            })
+
+        } else {
+            console.log('USER ------------------------', user);
+            cloudinary.v2.uploader.upload(req.file.path, (err, result) => {
+                if (err) {
+                    console.log(err);
+                }
+                user.update({
+                    image: result.secure_url,
+                    image_id: result.public_id,
+                }).then((updatedUser) => {
+                    res.json({
+                        updatedUser
                     })
                 })
-            }
-        })
+            })
+        }
     })
 })
 

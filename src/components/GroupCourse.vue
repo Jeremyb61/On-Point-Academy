@@ -153,10 +153,10 @@ export default {
     },
     answer: function() {
       for (var i in this.answer) {
-        if (this.answer[i] === "") {
-          this.noContinue = true;
-        } else {
+        if (this.answer[i] != "") {
           this.noContinue = false;
+        } else {
+          this.noContinue = true;
         }
       }
     }
