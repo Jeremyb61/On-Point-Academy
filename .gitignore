@@ -1,7 +1,10 @@
 .DS_Store
 node_modules
 /dist
-package-lock.json
+
+/src/modules/credentials.js
+/src/modules/cloudinary.js
+
 
 # local env files
 .env.local
