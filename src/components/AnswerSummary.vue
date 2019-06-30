@@ -73,7 +73,7 @@ export default {
   },
   async created() {
     try {
-        console.log(this.$route.params)
+        
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
       this.user = userData.data.user;
@@ -83,7 +83,7 @@ export default {
         // Get all personal chapters and courses
         var personalChaptersData = await Service.getPersonalChapters();
         this.personalChapters = personalChaptersData.data.data;
-        console.log(this.personalChapters);
+            
         //Get all questions/Answers user has submitted for this course
         var answers = await Service.getAnswers(this.$route.params);
         this.answerSummary = answers.data.answers;
@@ -99,7 +99,7 @@ export default {
       var answers = await Service.getAnswers(this.$route.params);
       this.answerSummary = answers.data.answers
       
-      console.log(this.$route.params);
+      ;
       }
     } catch (err) {
       console.log(err);

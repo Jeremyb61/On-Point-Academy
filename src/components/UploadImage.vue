@@ -24,8 +24,13 @@
               @change="onFilePicked"
             >
             <v-btn @click="onUpload">Upload</v-btn>
-            <v-alert :value="uploadSuccess" color="blue lighten-1" outline dismissible>Image Uploaded SuccessFully</v-alert>
-
+            <v-alert
+              :value="uploadSuccess"
+              color="blue lighten-1"
+              outline
+              dismissible
+            >Image Uploaded SuccessFully</v-alert>
+            <v-alert :value="error" type="error" outline dismissible>Please Select an Image</v-alert>
           </v-flex>
         </v-container>
       </v-content>
@@ -41,42 +46,41 @@ export default {
     return {
       imageName: "",
       file: null,
-      uploadSuccess:false
+      uploadSuccess: false,
+      error: false
     };
   },
   async created() {
-       var userData = await Service.getUserProfile(this.$route.params.id);
-      if (userData.data.error) {
-        this.$router.push(`/login`);
-      }
+    var userData = await Service.getUserProfile(this.$route.params.id);
+    if (userData.data.error) {
+      this.$router.push(`/login`);
+    }
   },
   methods: {
     pickFile() {
       this.$refs.file.click();
     },
     onFilePicked(event) {
-      console.log(event);
       this.file = event.target.files[0];
-      console.log(this.file);
       this.imageName = this.file.name;
     },
     onUpload() {
-      const formData = new FormData();
-      formData.append("image", this.file);
-      
-      try {
+      if (!this.file) {
+        this.error = true;
+      } else {
+        const formData = new FormData();
+        formData.append("image", this.file);
 
-        var uploadData = Service.uploadNewImage(
-          this.$route.params.id,
-          formData
-        );
-       
-        this.uploadSuccess = true;
-        console.log(this.uploadSuccess)
+        try {
+          var uploadData = Service.uploadNewImage(
+            this.$route.params.id,
+            formData
+          );
 
-
-      } catch (err) {
-        console.log(err);
+          this.uploadSuccess = true;
+        } catch (err) {
+          console.log(err);
+        }
       }
     },
     goBack() {

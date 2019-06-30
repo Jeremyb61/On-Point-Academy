@@ -146,7 +146,6 @@ export default {
           this.complete = true;
         }
 
-        console.log(this.complete);
       } catch (err) {
         console.log("ERROR ", err);
       }
@@ -166,7 +165,6 @@ export default {
       window.scrollTo(0, 0);
 
       // Get User Data
-      console.log(this.$route.params);
       var userData = await Service.getUserProfile(this.$route.params.id);
       if (userData.data.error) {
         this.$router.push(`/login`);
@@ -175,10 +173,8 @@ export default {
           this.$router.push(`/dashboard/${this.$route.params.id}/`);
         } else {
           for (var i in userData.data.user.groups) {
-            console.log(userData.data.user.groups[i]);
             if (userData.data.user.groups[i].id == this.$route.params.groupId) {
               this.denied = false;
-              console.log("denied: ", this.denied);
             }
           }
         }
@@ -190,7 +186,6 @@ export default {
           this.$route.params.id,
           this.$route.params.group
         );
-        console.log(groupData);
         if (groupData.data.status === false) {
           this.otherGroupStatus = false;
         } else {
@@ -204,14 +199,12 @@ export default {
         // Get all Group chapters
         var groupChaptersData = await Service.getGroupChapters();
         this.groupChapters = groupChaptersData.data.data;   
-        console.log("groupChapters", this.groupChapters);
 
         var CourseContent = await Service.getGroupCourseContent(
           this.$route.params
         );
         this.courseData = CourseContent.data.course;
         this.questions = CourseContent.data.course.group_course_questions;
-        console.log(this.courseData);
 
         var answerData = await Service.getSubmittedGroupAnswers(
           this.$route.params
@@ -219,7 +212,6 @@ export default {
         for (var i in answerData.data.answers) {
           this.answer.push(answerData.data.answers[i].answer_content);
         }
-        console.log("answerData", answerData);
 
         var checkComplete = await Service.checkForComplete(this.$route.params);
         if (!checkComplete.data.complete) {
@@ -227,14 +219,12 @@ export default {
         } else {
           this.complete = true;
         }
-        console.log(this.complete);
 
         //Get all group course completes
         var groupCourseComplete = await Service.getGroupCourseCompletes(
           this.$route.params
         );
         this.groupCompletes = groupCourseComplete.data.completes;
-        console.log(this.groupCompletes);
       }
     } catch (err) {
       console.log("ERROR ", err);
@@ -274,13 +264,11 @@ export default {
     },
     async submitAnswers() {
       var answerObj = {};
-      console.log("question ", this.questions);
       for (var i in this.questions) {
         answerObj = {
           questionId: this.questions[i].id,
           answer: this.answer[i]
         };
-        console.log("answerObj", answerObj);
         var submitResponse = await Service.submitGroupAnswers(
           answerObj,
           this.$route.params
@@ -288,13 +276,11 @@ export default {
       }
       if (submitResponse.data.newAnswer) this.submitVal = true;
 
-      console.log("Submit Response", submitResponse);
     },
     async submitComplete() {
       await this.submitAnswers();
       await Service.submitGroupCourseCompletion(this.$route.params);
       var courseId = parseInt(this.$route.params.courseId);
-      console.log("pre for");
       for (var i in this.groupChapters) {
         for (var j in this.groupChapters[i].group_courses) {
           if (
@@ -304,7 +290,6 @@ export default {
             if (
               this.groupChapters[i].group_courses[parseInt(j) + 1] === undefined
             ) {
-              console.log("Chapter Completed - back to dashboard");
               this.$router.push(
                 `/group-dashboard/${this.$route.params.id}/1/${
                   this.$route.params.group
@@ -317,10 +302,8 @@ export default {
               ].location;
               var nextLocArr = ("" + nextCourseLocation).split("");
               var currentLocArr = ("" + currentCourseLocation).split("");
-              console.log("current", currentLocArr);
-              console.log("next", nextLocArr);
+      
               if (currentLocArr[0] === nextLocArr[0]) {
-                console.log("Course Completed - next course");
                 this.$router.push(
                   `/dashboard/${this.$route.params.id}/${
                     this.$route.params.group
@@ -337,7 +320,6 @@ export default {
         this.$route.params
       );
       this.complete = false;
-      console.log(delComplete);
     },
     signOut() {
       this.$router.push(`/login`);

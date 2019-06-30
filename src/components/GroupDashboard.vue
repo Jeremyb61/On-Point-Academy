@@ -121,7 +121,6 @@ export default {
         this.$route.params.id,
         to.params.group
       );
-      console.log(groupData);
       if (groupData.data.status === false) {
         this.otherGroupStatus = false;
       } else {
@@ -141,25 +140,20 @@ export default {
   },
   async created() {
     try {
-      console.log(this.$route.params);
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
 
       if (userData.data.error) {
         this.$router.push("/login");
       } else {
-        console.log(userData);
         if (userData.data.user.groups.length === 0) {
           this.$router.push(`/dashboard/${this.$route.params.id}/`);
         } else {
-          console.log("else");
           for (var i in userData.data.user.groups) {
-            console.log(userData.data.user.groups[i].id);
-            console.log(this.$route.params.groupId);
+      
             if (userData.data.user.groups[i].id == this.$route.params.groupId) {
               this.denied = false;
             }
-            console.log("this.denied ", this.denied);
           }
         }
         if (this.denied == true) {
@@ -175,19 +169,16 @@ export default {
           this.$route.params.id,
           this.$route.params.group
         );
-        console.log(groupData);
         if (groupData.data.status === false) {
           this.otherGroupStatus = false;
         } else {
           this.groups = groupData.data.usersGroups.groups;
         }
-        console.log('other',this.otherGroupStatus)
         //Get all group course completes
         var groupCourseComplete = await Service.getGroupCourseCompletes(
           this.$route.params
         );
         this.groupCompletes = groupCourseComplete.data.completes;
-        console.log(this.groupCompletes);
 
         // Get all Group chapters
         var groupChaptersData = await Service.getGroupChapters();

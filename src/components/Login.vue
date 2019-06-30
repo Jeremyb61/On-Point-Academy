@@ -61,7 +61,6 @@ export default {
           password: this.password
         };
         var loginData = await Service.login(user);
-        console.log(loginData);
         if (loginData.data.status === false) {
           this.error = loginData.data.msg;
         }  else {

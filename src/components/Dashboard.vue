@@ -234,13 +234,12 @@ export default {
     try {
       // Get User Data
       var userData = await Service.getUserProfile(this.$route.params.id);
-    //   console.log('SDFDSFSD',userData);
       if (userData.data.error) {
         this.$router.push(`/login`);
       } else {
         this.user = userData.data.user;
         this.image = userData.data.user.image;
-        console.log(this.user);
+        
 
         if(this.user.personal_access === false) {
             this.personalAccess = false;
@@ -248,8 +247,6 @@ export default {
             this.groupName = groupChapters.data.user.groups[0].title;
             this.groupId = groupChapters.data.user.groups[0].id;
             this.gChapters = groupChapters.data.chapter;
-
-            console.log(this.gChapters);
         }
 
         // Get all groups that this user belongs to
@@ -264,8 +261,6 @@ export default {
         // Get all personal chapters and courses
         var personalChaptersData = await Service.getPersonalChapters();
         this.personalChapters = personalChaptersData.data.data;
-        // console.log(this.personalChapters);
-
         
         // Get all personal course completes
         var userTotal = 0;
@@ -286,24 +281,21 @@ export default {
               getCompletes.data.courses.count
             }`;
             this.progress.push(completes);
-            // console.log('progress',this.progress);
 
           // Getting value for progress bars
             var numerator = parseInt(completes);
             this.value.push(numerator * (100/localCourseTotal));
-            // console.log('numerator', numerator);
-            // console.log('this.value', this.value);
+        
             courseTotal +=localCourseTotal
             this.overallProgress = `${userTotal}/${courseTotal}`;
             
         }
-        // console.log(this.overallProgress);
         var split = this.overallProgress.split("/");
-        // console.log('split: ',split);
+
         var result = parseInt(split[0], 10) / parseInt(split[1], 10);
-        // console.log('result: ',result);
+
         this.totalComplete = Math.floor(result * 100);
-        // console.log('totalComplete: ',this.totalComplete);
+
        
       }
     } catch (err) {

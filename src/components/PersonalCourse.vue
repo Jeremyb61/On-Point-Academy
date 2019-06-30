@@ -170,7 +170,6 @@ export default {
         this.courseData = courseContentData.data.course;
         this.videoId = courseContentData.data.course.video_url;
         this.questions = this.courseData.personal_course_questions;
-        console.log(this.courseData, "dsfsdsdds");
 
         // Get User Data
         var userData = await Service.getUserProfile(this.$route.params.id);
@@ -179,7 +178,6 @@ export default {
         // Get all personal chapters and courses
         var personalChaptersData = await Service.getPersonalChapters();
         this.personalChapters = personalChaptersData.data.data;
-        console.log(this.personalChapters);
 
         var answerData = await Service.getSubmittedAnswers(this.$route.params);
         if (answerData.data.answers.personal_course_questions[0]) {
@@ -198,13 +196,11 @@ export default {
         var checkComplete = await Service.checkPersonalComplete(
           this.$route.params
         );
-        console.log(checkComplete);
         if (!checkComplete.data.complete[0]) {
           this.complete = false;
         } else {
           this.complete = true;
         }
-        console.log(this.complete);
       }
     } catch (err) {
       console.log("ERROR ", err);
@@ -249,7 +245,6 @@ export default {
       );
       this.complete = true;
       var courseId = parseInt(this.$route.params.courseId);
-      console.log(courseId);
       for (var i in this.personalChapters) {
         for (var j in this.personalChapters[i].personal_courses) {
           if (
@@ -260,7 +255,6 @@ export default {
               this.personalChapters[i].personal_courses[parseInt(j) + 1] ===
               undefined
             ) {
-              console.log("Chapter Completed - back to dashboard");
               this.$router.push(`/dashboard/${this.$route.params.id}`);
             } else {
               var currentCourseLocation = this.courseData.location;
@@ -269,7 +263,6 @@ export default {
               var nextLocArr = ("" + nextCourseLocation).split("");
               var currentLocArr = ("" + currentCourseLocation).split("");
               if (currentLocArr[0] === nextLocArr[0]) {
-                console.log("Course Completed - next course");
                 this.$router.push(
                   `/dashboard/${this.$route.params.id}/${courseId + 1}`
                 );
@@ -284,7 +277,6 @@ export default {
         this.$route.params
       );
       this.complete = false;
-      console.log(delComplete);
     }
   }
 };
