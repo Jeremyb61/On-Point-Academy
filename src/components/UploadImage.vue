@@ -51,6 +51,7 @@ export default {
     };
   },
   async created() {
+      // comment
     var userData = await Service.getUserProfile(this.$route.params.id);
     if (userData.data.error) {
       this.$router.push(`/login`);
