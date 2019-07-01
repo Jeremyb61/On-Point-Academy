@@ -29,10 +29,7 @@ sequelize
 
 app.use(bodyParser.json());
 
-app.use(cors({
-    credentials: true,
-    origin: ['http://localhost:8080']
-}));
+app.use(cors());
 
 // Session Config
 const sessConfig = {
